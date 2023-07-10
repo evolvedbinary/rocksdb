@@ -2357,16 +2357,16 @@ class JniUtil {
       JNIEnv* env, jobject jkey, jint jkey_off, jint jkey_len, jobject jval,
       jint jval_off, jint jval_len) {
     char* key = reinterpret_cast<char*>(env->GetDirectBufferAddress(jkey));
-    if (key == nullptr ||
-        env->GetDirectBufferCapacity(jkey) < (jkey_off + jkey_len)) {
+    if (key == nullptr /*||
+        env->GetDirectBufferCapacity(jkey) < (jkey_off + jkey_len)*/) {
       ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env,
                                                        "Invalid key argument");
       return;
     }
 
     char* value = reinterpret_cast<char*>(env->GetDirectBufferAddress(jval));
-    if (value == nullptr ||
-        env->GetDirectBufferCapacity(jval) < (jval_off + jval_len)) {
+    if (value == nullptr /*||
+        env->GetDirectBufferCapacity(jval) < (jval_off + jval_len)*/) {
       ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(
           env, "Invalid value argument");
       return;

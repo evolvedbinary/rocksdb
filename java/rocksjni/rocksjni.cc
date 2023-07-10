@@ -1096,6 +1096,7 @@ jint rocksdb_get_helper_direct(
     *has_exception = true;
     return kArgumentError;
   }
+  /*
   if (env->GetDirectBufferCapacity(jkey) < (jkey_off + jkey_len)) {
     ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(
         env,
@@ -1103,7 +1104,7 @@ jint rocksdb_get_helper_direct(
         "+ length).");
     *has_exception = true;
     return kArgumentError;
-  }
+  }*/
 
   char* value = reinterpret_cast<char*>(env->GetDirectBufferAddress(jval));
   if (value == nullptr) {
@@ -1114,6 +1115,7 @@ jint rocksdb_get_helper_direct(
     return kArgumentError;
   }
 
+  /*
   if (env->GetDirectBufferCapacity(jval) < (jval_off + jval_len)) {
     ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(
         env,
@@ -1121,7 +1123,7 @@ jint rocksdb_get_helper_direct(
         "(offset + length).");
     *has_exception = true;
     return kArgumentError;
-  }
+  }*/
 
   key += jkey_off;
   value += jval_off;
