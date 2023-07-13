@@ -1088,7 +1088,8 @@ jint rocksdb_get_helper_direct(
   static const int kStatusError = -2;
   static const int kArgumentError = -3;
 
-  char* key = reinterpret_cast<char*>(env->GetDirectBufferAddress(jkey));
+  //char* key = reinterpret_cast<char*>(env->GetDirectBufferAddress(jkey));
+  char* key = reinterpret_cast<char*>(ROCKSDB_NAMESPACE::ByteBufferJni::getByteBufferAddress(env, jkey));
   if (key == nullptr) {
     ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(
         env,

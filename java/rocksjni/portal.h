@@ -1319,6 +1319,50 @@ class ByteBufferJni : public JavaClass {
     return mid;
   }
 
+  /**
+   * Get the Java Field: ByteBuffer#address
+   *
+   * @param env A pointer to the Java environment
+   *
+   * @return The Java Field ID or nullptr if the class or field id could not
+   *     be retrieved
+   */
+  static jfieldID getAddressFieldId(JNIEnv* env) {
+    jclass jclazz = getJClass(env);
+    if (jclazz == nullptr) {
+      // exception occurred accessing class
+      return nullptr;
+    }
+
+    static jfieldID fid = env->GetFieldID(
+        jclazz, "address", "J");
+    assert(fid != nullptr);
+    return fid;
+  }
+
+  /**
+   * Gets the value of the ByteBuffer#address
+   *
+   * @param env A pointer to the Java environment
+   * @param jbyte_buffer A reference to a direct ByteBuffer
+   *
+   * @return The address of the bytebuffer contents, if the ByteBuffer is directy
+   *     a nullptr if an exception occurs
+   */
+  static jlong getByteBufferAddress(JNIEnv* env, jobject jbyte_buffer) {
+    assert(jbyte_buffer != nullptr);
+
+    jfieldID jaddress_field = getAddressFieldId(env);
+    if (jaddress_field == nullptr) {
+      // exception occurred accessing the field
+      return 0L;
+    }
+
+    jlong addr = env->GetLongField(jbyte_buffer, jaddress_field);
+    assert(addr != 0);
+    return addr;
+  }
+
   static jobject construct(JNIEnv* env, const bool direct,
                            const size_t capacity,
                            jclass jbytebuffer_clazz = nullptr) {
