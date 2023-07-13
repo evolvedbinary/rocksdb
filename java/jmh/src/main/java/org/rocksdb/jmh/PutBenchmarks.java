@@ -37,6 +37,7 @@ public class PutBenchmarks {
   private AtomicInteger cfHandlesIdx;
   ColumnFamilyHandle[] cfHandles;
   RocksDB db;
+  RocksDBBuf dbBuf;
 
   @Setup(Level.Trial)
   public void setup() throws IOException, RocksDBException {
@@ -69,6 +70,7 @@ public class PutBenchmarks {
     final List<ColumnFamilyHandle> cfHandlesList = new ArrayList<>(cfDescriptors.size());
     db = RocksDB.open(options, dbDir.toAbsolutePath().toString(), cfDescriptors, cfHandlesList);
     cfHandles = cfHandlesList.toArray(new ColumnFamilyHandle[0]);
+    dbBuf = new RocksDBBuf(db);
   }
 
   @TearDown(Level.Trial)
@@ -122,7 +124,6 @@ public class PutBenchmarks {
     keyBuffer.writeBytes(ba("key" + i));
     valueBuffer.clear();
     valueBuffer.writeBytes(ba("value" + i));
-    db.put(getColumnFamily(), keyBuffer.memoryAddress(), keyBuffer.readableBytes(),
-        valueBuffer.memoryAddress(), valueBuffer.readableBytes());
+    dbBuf.put(getColumnFamily(), keyBuffer, valueBuffer);
   }
 }

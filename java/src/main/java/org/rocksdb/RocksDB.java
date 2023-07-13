@@ -999,7 +999,7 @@ public class RocksDB extends RocksObject {
    *    native library.
    * @see IllegalArgumentException
    */
-  public void put(final ColumnFamilyHandle columnFamilyHandle, final WriteOptions writeOpts,
+  void putAddr(final ColumnFamilyHandle columnFamilyHandle, final WriteOptions writeOpts,
       final long keyAddr, final int keyLen, final long valueAddr, final int valueLen)
       throws RocksDBException {
     putAddr(nativeHandle_, writeOpts.nativeHandle_, keyAddr, keyLen, valueAddr, valueLen,
@@ -1023,7 +1023,7 @@ public class RocksDB extends RocksObject {
    *    native library.
    * @see IllegalArgumentException
    */
-  public void put(final ColumnFamilyHandle columnFamilyHandle, final long keyAddr, final int keyLen,
+  void putAddr(final ColumnFamilyHandle columnFamilyHandle, final long keyAddr, final int keyLen,
       final long valueAddr, final int valueLen) throws RocksDBException {
     putAddr(nativeHandle_, keyAddr, keyLen, valueAddr, valueLen, columnFamilyHandle.nativeHandle_);
   }
@@ -1067,7 +1067,7 @@ public class RocksDB extends RocksObject {
    *    native library.
    * @see IllegalArgumentException
    */
-  public void put(final WriteOptions writeOpts, final long keyAddr, final int keyLen,
+  void putAddr(final WriteOptions writeOpts, final long keyAddr, final int keyLen,
       final long valueAddr, final int valueLen) throws RocksDBException {
     putAddr(nativeHandle_, writeOpts.nativeHandle_, keyAddr, keyLen, valueAddr, valueLen, 0);
   }
