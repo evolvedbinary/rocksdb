@@ -47,7 +47,7 @@ I was seeing some wrong looking numbers. Not sure why. Upping the keyCount from 
 
 ### Removing checks on `ByteBuffer`
 
-Removed `env->GetDirectBufferCapacity(jval)` checks on `get()` and `put() helpers.
+Removed `env->GetDirectBufferCapacity(jval)` checks on `get()` and `put()` helpers.
 Compared to the above, it's clear that this makes a very significant difference to the performance of preallocated `ByteBuffer` methods.
 If we were to remove the checks used by `env->GetDirectBufferAddress()` we would probably get close to the `preallocatedMemoryAddr` performance.
 Here are the results with the length check removed; that's only half of it.
@@ -70,7 +70,9 @@ GetBenchmarks.preallocatedMemoryAddr           no_column_family      100000     
 GetBenchmarks.preallocatedMemoryAddr           no_column_family      100000       1024           64  thrpt    2  428906.700          ops/s
 GetBenchmarks.preallocatedMemoryAddr           no_column_family      100000       1024         2048  thrpt    2  421665.276          ops/s
 
-#### Test/Proposal
+### Proposals
+
+#### Better ByteBuffer
 
 If we use the proposed raw address methods to write an alternative `ByteBuffer` implementation, do we still pay the checking costs ? If not,
-that could be a good way forward; we could propose making the raw methods `protected` members of a `RocksJavaDirectAPI` class.
+that could be a good way forward; we could propose making the raw methods `protected` members of a `RocksDBAddr` class.

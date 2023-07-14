@@ -170,17 +170,17 @@ void Java_org_rocksdb_WriteBatchWithIndex_putAddr(
   auto* cf_handle =
       reinterpret_cast<ROCKSDB_NAMESPACE::ColumnFamilyHandle*>(jcf_handle);
 
-  ROCKSDB_NAMESPACE::Slice key_slice;
-  ROCKSDB_NAMESPACE::Slice value_slice;
+  auto put = [&wb, &cf_handle](ROCKSDB_NAMESPACE::Slice& key,
+                               ROCKSDB_NAMESPACE::Slice& value) {
+    if (cf_handle == nullptr) {
+      wb->Put(key, value);
+    } else {
+      wb->Put(cf_handle, key, value);
+    }
+  };
 
   ROCKSDB_NAMESPACE::JniUtil::kv_op_direct_addr(
-      env, jkey_addr, jkey_len, jval_addr, jval_len, key_slice, value_slice);
-
-  if (cf_handle == nullptr) {
-    wb->Put(key_slice, value_slice);
-  } else {
-    wb->Put(cf_handle, key_slice, value_slice);
-  }
+      put, env, jkey_addr, jkey_len, jval_addr, jval_len);
 }
 
 /*

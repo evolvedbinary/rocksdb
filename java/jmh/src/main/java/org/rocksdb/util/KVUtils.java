@@ -27,6 +27,17 @@ public final class KVUtils {
     return string.getBytes(UTF_8);
   }
 
+  public static byte[] ba(final String string, final int fillToCapacity) {
+    byte[] bytes = new byte[fillToCapacity];
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+    byteBuffer.put(string.getBytes(UTF_8));
+    while (byteBuffer.position() < fillToCapacity) {
+      byteBuffer.put((byte)0x30);
+    }
+    
+    return bytes;
+  }
+
   /**
    * Get a byte array from a string.
    *

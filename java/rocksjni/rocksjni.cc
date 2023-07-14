@@ -725,22 +725,22 @@ void Java_org_rocksdb_RocksDB_putAddr__JJJIJIJ(JNIEnv* env, jobject /*jdb*/,
   auto* cf_handle =
       reinterpret_cast<ROCKSDB_NAMESPACE::ColumnFamilyHandle*>(jcf_handle);
 
-  ROCKSDB_NAMESPACE::Slice key_slice;
-  ROCKSDB_NAMESPACE::Slice value_slice;
-
+  auto put = [&env, &db, &cf_handle, &write_options](
+                 ROCKSDB_NAMESPACE::Slice& key,
+                 ROCKSDB_NAMESPACE::Slice& value) {
+    ROCKSDB_NAMESPACE::Status s;
+    if (cf_handle == nullptr) {
+      s = db->Put(*write_options, key, value);
+    } else {
+      s = db->Put(*write_options, cf_handle, key, value);
+    }
+    if (s.ok()) {
+      return;
+    }
+    ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env, s);
+  };
   ROCKSDB_NAMESPACE::JniUtil::kv_op_direct_addr(
-      env, jkey_addr, jkey_len, jval_addr, jval_len, key_slice, value_slice);
-
-  ROCKSDB_NAMESPACE::Status s;
-  if (cf_handle == nullptr) {
-    s = db->Put(*write_options, key_slice, value_slice);
-  } else {
-    s = db->Put(*write_options, cf_handle, key_slice, value_slice);
-  }
-  if (s.ok()) {
-    return;
-  }
-  ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env, s);
+      put, env, jkey_addr, jkey_len, jval_addr, jval_len);
 }
 
 /*
@@ -758,22 +758,23 @@ void Java_org_rocksdb_RocksDB_putAddr__JJIJIJ(JNIEnv* env, jobject /*jdb*/,
   auto* cf_handle =
       reinterpret_cast<ROCKSDB_NAMESPACE::ColumnFamilyHandle*>(jcf_handle);
 
-  ROCKSDB_NAMESPACE::Slice key_slice;
-  ROCKSDB_NAMESPACE::Slice value_slice;
+  auto put = [&env, &db, &cf_handle](
+                 ROCKSDB_NAMESPACE::Slice& key,
+                 ROCKSDB_NAMESPACE::Slice& value) {
+    ROCKSDB_NAMESPACE::Status s;
+    if (cf_handle == nullptr) {
+      s = db->Put(default_write_options, key, value);
+    } else {
+      s = db->Put(default_write_options, cf_handle, key, value);
+    }
+    if (s.ok()) {
+      return;
+    }
+    ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env, s);
+  };
 
   ROCKSDB_NAMESPACE::JniUtil::kv_op_direct_addr(
-      env, jkey_addr, jkey_len, jval_addr, jval_len, key_slice, value_slice);
-
-  ROCKSDB_NAMESPACE::Status s;
-  if (cf_handle == nullptr) {
-    s = db->Put(default_write_options, key_slice, value_slice);
-  } else {
-    s = db->Put(default_write_options, cf_handle, key_slice, value_slice);
-  }
-  if (s.ok()) {
-    return;
-  }
-  ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env, s);
+      put, env, jkey_addr, jkey_len, jval_addr, jval_len);
 }
 
 //////////////////////////////////////////////////////////////////////////////
