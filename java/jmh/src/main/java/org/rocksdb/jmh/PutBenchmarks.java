@@ -9,16 +9,21 @@ package org.rocksdb.jmh;
 import static org.rocksdb.util.KVUtils.ba;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.openjdk.jmh.annotations.*;
 import org.rocksdb.*;
 import org.rocksdb.util.FileUtils;
+
 
 @State(Scope.Benchmark)
 public class PutBenchmarks {
@@ -31,6 +36,10 @@ public class PutBenchmarks {
   })
   String columnFamilyTestType;
 
+  @Param({"16","64"}) int keySize;
+
+  @Param({"16", "64", "1024"}) int valueSize;
+
   Path dbDir;
   DBOptions options;
   int cfs = 0;  // number of column families
@@ -42,6 +51,20 @@ public class PutBenchmarks {
   @Setup(Level.Trial)
   public void setup() throws IOException, RocksDBException {
     RocksDB.loadLibrary();
+
+    nioKeyBuffer = ByteBuffer.allocateDirect(keySize);
+    nioValueBuffer = ByteBuffer.allocateDirect(valueSize);
+
+    keyArray = new byte[keySize];
+    valueArray = new byte[valueSize];
+
+    wrapKey = ByteBuffer.wrap(keyArray);
+    wrapValue = ByteBuffer.wrap(valueArray);
+
+    valueFill = new byte[valueSize];
+    for (int i = 0; i < valueSize; i++) {
+      valueFill[i] = (byte) 0x30;
+    }
 
     dbDir = Files.createTempDirectory("rocksjava-put-benchmarks");
 
@@ -83,6 +106,14 @@ public class PutBenchmarks {
     FileUtils.delete(dbDir);
   }
 
+  private byte[] keyArray;
+  private byte[] valueArray;
+  private byte[] keyStringBytes = "key".getBytes(StandardCharsets.UTF_8);
+  private byte[] valueStringBytes = "value".getBytes(StandardCharsets.UTF_8);
+  private ByteBuffer wrapKey;
+  private ByteBuffer wrapValue;
+  private byte[] valueFill;
+
   private ColumnFamilyHandle getColumnFamily() {
     if (cfs == 0) {
       return cfHandles[0];
@@ -110,20 +141,30 @@ public class PutBenchmarks {
   @Benchmark
   public void put(final ComparatorBenchmarks.Counter counter) throws RocksDBException {
     final int i = counter.next();
-    db.put(getColumnFamily(), ba("key" + i), ba("value" + i));
+    db.put(getColumnFamily(), ba("key" + i, keySize), ba("value" + i, valueSize));
   }
 
-  private static final ByteBuf keyBuffer = PooledByteBufAllocator.DEFAULT.directBuffer();
-  private static final ByteBuf valueBuffer = PooledByteBufAllocator.DEFAULT.directBuffer();
+  private ByteBuffer nioKeyBuffer;
+  private ByteBuffer nioValueBuffer;
+
+  private final ByteBuf keyBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(keySize);
+  private final ByteBuf valueBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(valueSize);
 
   @Benchmark
   public void putWithMemoryAddr(final ComparatorBenchmarks.Counter counter)
       throws RocksDBException {
     final int i = counter.next();
+
     keyBuffer.clear();
-    keyBuffer.writeBytes(ba("key" + i));
+    ByteBufUtil.writeAscii(keyBuffer, "key");
+    keyBuffer.writeInt(i);
+    keyBuffer.writeBytes(valueFill, keyBuffer.writerIndex(), keySize - keyBuffer.writerIndex());
+
     valueBuffer.clear();
-    valueBuffer.writeBytes(ba("value" + i));
+    ByteBufUtil.writeAscii(valueBuffer, "value");
+    valueBuffer.writeInt(i);
+    valueBuffer.writeBytes(valueFill, valueBuffer.writerIndex(), valueSize - valueBuffer.writerIndex());
+
     dbBuf.put(getColumnFamily(), keyBuffer, valueBuffer);
   }
 }
