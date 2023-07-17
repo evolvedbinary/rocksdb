@@ -75,6 +75,7 @@ public class WriteBatchBenchmarks {
   private byte[] valueStringBytes = "value".getBytes(StandardCharsets.UTF_8);
   private ByteBuffer wrapKey;
   private ByteBuffer wrapValue;
+  private byte[] valueFill;
 
   @Benchmark
   @OperationsPerInvocation(N)
@@ -130,8 +131,6 @@ public class WriteBatchBenchmarks {
   private final ByteBuf keyBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(keySize);
   private final ByteBuf valueBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(valueSize);
 
-  private byte[] valueFill;
-
   @Benchmark
   @OperationsPerInvocation(N)
   public void putWithAddress() throws RocksDBException {
@@ -141,7 +140,7 @@ public class WriteBatchBenchmarks {
         keyBuffer.clear();
         ByteBufUtil.writeAscii(keyBuffer, "key");
         keyBuffer.writeInt(i);
-        keyBuffer.writeBytes(valueFill, keyBuffer.writerIndex(), valueSize - keyBuffer.writerIndex());
+        keyBuffer.writeBytes(valueFill, keyBuffer.writerIndex(), keySize - keyBuffer.writerIndex());
 
         valueBuffer.clear();
         ByteBufUtil.writeAscii(valueBuffer, "value");
