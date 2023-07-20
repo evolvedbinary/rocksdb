@@ -1,6 +1,6 @@
 ## Introduction
 
-We have taken the `address-api` branch and carried out some further tests and experiments. These live in [Evolved Binary branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
+We have taken the `address-api` branch and carried out some further tests and experiments. These live in the [Evolved Binary branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
 ## Conceptual Review
 
 I re-ran the tests and confirmed your results. That really looks like a big gain; we had not looked enough at performance of small buffers to see the problems with `ByteBuffer` range checking.
@@ -9,7 +9,7 @@ I rebuilt the `ByteBuffer` code with the `GetDirectBufferCapacity()` check turne
 
 I also tried to adapt the `ByteBuffer` code to use JNI field access to the `address` field instead of `GetDirectBufferAddress()`, but it doesn't help. I can imagine that taking the address on the Java side and passing it through to C++ would work, but this is more or less replicating what you have done to use Netty `ByteBuf`, and applying it to `ByteBuffer`
 
-The main criticism I have is that accepting the PR as-is, would expose an entirely unchecked interface with raw `address` and `length` fields at the API. We haven't done this before, and in particular we hope that we can in the long term move to an API that uses
+The main criticism I have is that accepting the PR as-is would expose an entirely unchecked interface with raw `address` and `length` fields at the API. We haven't done this before, and in particular we hope that we can in the long term move to an API that uses
 the [`MemorySegment`](https://docs.oracle.com/en/java/javase/20/docs/api/java.base/java/lang/foreign/MemorySegment.html) class as a buffer parameter as and when we can push the Java version far enough to support Project Panama.
 
 One alternative mechanism I looked at was making the new `put()` methods package private
