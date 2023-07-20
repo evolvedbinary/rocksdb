@@ -1,6 +1,6 @@
 ## Introduction
 
-We have taken the `address-api` branch and carried out some further tests and experiments. These live in the [Evolved Binary branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
+We have taken the `address-api` branch and carried out some further tests and experiments. These live in the [Evolved Binary fork of the RocksDB address-api branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
 ## Conceptual Review
 
 I re-ran the tests and confirmed your results. That really looks like a big gain; we had not looked enough at performance of small buffers to see the problems with `ByteBuffer` range checking.
