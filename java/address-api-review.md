@@ -1,13 +1,13 @@
 ## Introduction
 
-We have taked the `address-api` branch and carried out some further tests and experiments on it. These live in [Evolved Binary branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
+We have taken the `address-api` branch and carried out some further tests and experiments. These live in [Evolved Binary branch](https://github.com/evolvedbinary/rocksdb/tree/address-api-experiments)
 ## Conceptual Review
 
-I re-ran the tests and confirmed your results. That really looks like a big gain; We had not looked enough at performance of small buffers to see the problems with `ByteBuffer` range checking.
+I re-ran the tests and confirmed your results. That really looks like a big gain; we had not looked enough at performance of small buffers to see the problems with `ByteBuffer` range checking.
 
 I rebuilt the `ByteBuffer` code with the `GetDirectBufferCapacity()` check turned off, and confirmed that we immediately get half of the performance gain you have seen; this strongly supports your profiling results.
 
-I also tried to adapt the `ByteBuffer` code to use JNI field access to the `address` field instead of `GetDirectBufferAddress()`, but it doesn't help. I can imagine that taking the address on the Java side and passing it through to C++ would work, but this is more or less replicating what you have done to use netty `ByteBuf`, and applying it to `ByteBuffer`
+I also tried to adapt the `ByteBuffer` code to use JNI field access to the `address` field instead of `GetDirectBufferAddress()`, but it doesn't help. I can imagine that taking the address on the Java side and passing it through to C++ would work, but this is more or less replicating what you have done to use Netty `ByteBuf`, and applying it to `ByteBuffer`
 
 The main criticism I have is that accepting the PR as-is, would expose an entirely unchecked interface with raw `address` and `length` fields at the API. We haven't done this before, and in particular we hope that we can in the long term move to an API that uses
 the [`MemorySegment`](https://docs.oracle.com/en/java/javase/20/docs/api/java.base/java/lang/foreign/MemorySegment.html) class as a buffer parameter as and when we can push the Java version far enough to support Project Panama.
@@ -92,9 +92,9 @@ var dbBuf = new RocksDBBuf(db);
     dbBuf.put(getColumnFamily(), keyBuffer, valueBuffer);
   }
 ```
-This would make it very hard for someone to use the address-based API unless they really meant to. And we could use exactly the same mechanism to offer a `MemorySegment`-based API.
+This would make it very hard for someone to use the address-based API unless they really meant to. Plus we could use exactly the same mechanism to offer a `MemorySegment`-based API.
 
-I benchmarked that for `put()` and it seems indistinguishable from your version; unsuprisingly as it is just a couple of extra calls which are probably being inlined anyway.
+I benchmarked that for `put()` and it seems indistinguishable from your version, unsuprisingly as it is just a couple of extra calls which are probably being inlined anyway.
 
 ## Concrete Items
 
