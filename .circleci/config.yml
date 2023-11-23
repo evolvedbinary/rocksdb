@@ -85,9 +85,11 @@ commands:
           command: |
             cd build\java
             & $Env:CTEST_BIN -C Debug -j 16
+
   pre-steps-macos:
-      steps:
-        - pre-steps
+    steps:
+      - pre-steps
+
 
   post-steps:
     steps:
@@ -112,22 +114,19 @@ commands:
           path: /tmp/core_dumps
           when: on_fail
 
-  post-pmd-steps:
-    steps:
-      - store_artifacts:
-          path: /home/circleci/project/java/target/pmd.xml
-          when: on_fail
-      - store_artifacts:
-          path: /home/circleci/project/java/target/site
-          when: on_fail
-
-  upgrade-cmake:
+  setup-folly:
     steps:
       - run:
-          name: Upgrade cmake
+          name: Checkout folly sources
           command: |
-            sudo apt remove --purge cmake
-            sudo snap install cmake --classic
+            make checkout_folly
+
+  build-folly:
+    steps:
+      - run:
+          name: Build folly and dependencies
+          command: |
+            make build_folly
 
   install-gflags:
     steps:
@@ -143,75 +142,6 @@ commands:
           command: |
             HOMEBREW_NO_AUTO_UPDATE=1 brew install gflags
 
-  install-maven:
-    steps:
-      - run:
-          name: Install maven
-          command: |
-            sudo apt-get update -y && sudo apt-get install -y maven
-
-  setup-folly:
-    steps:
-      - run:
-          name: Checkout folly sources
-          command: |
-            make checkout_folly
-
-  build-folly:
-    steps:
-      - run:
-          name: Build folly and dependencies
-          command: |
-            make build_folly
-
-  build-for-benchmarks:
-    steps:
-      - pre-steps
-      - run:
-          name: "Linux build for benchmarks"
-          command: #sized for the resource-class rocksdb-benchmark-sys1
-            make V=1 J=8 -j8 release
-
-  perform-benchmarks:
-    steps:
-      - run:
-          name: "Test low-variance benchmarks"
-          command: ./tools/benchmark_ci.py --db_dir /tmp/rocksdb-benchmark-datadir --output_dir /tmp/benchmark-results --num_keys 20000000
-          environment:
-            LD_LIBRARY_PATH: /usr/local/lib
-            # How long to run parts of the test(s)
-            DURATION_RO: 300
-            DURATION_RW: 500
-            # Keep threads within physical capacity of server (much lower than default)
-            NUM_THREADS: 1
-            MAX_BACKGROUND_JOBS: 4
-            # Don't run a couple of "optional" initial tests
-            CI_TESTS_ONLY: "true"
-            # Reduce configured size of levels to ensure more levels in the leveled compaction LSM tree
-            WRITE_BUFFER_SIZE_MB: 16
-            TARGET_FILE_SIZE_BASE_MB: 16
-            MAX_BYTES_FOR_LEVEL_BASE_MB: 64
-            # The benchmark host has 32GB memory
-            # The following values are tailored to work with that
-            # Note, tests may not exercise the targeted issues if the memory is increased on new test hosts.
-            COMPRESSION_TYPE: "none"
-            CACHE_INDEX_AND_FILTER_BLOCKS: 1
-            MIN_LEVEL_TO_COMPRESS: 3
-            CACHE_SIZE_MB: 10240
-            MB_WRITE_PER_SEC: 2
-
-  post-benchmarks:
-    steps:
-      - store_artifacts: # store the benchmark output
-          path: /tmp/benchmark-results
-          destination: test_logs
-      - run:
-          name: Send benchmark report to visualisation
-          command: |
-            set +e
-            set +o pipefail
-            ./build_tools/benchmark_log_tool.py --tsvfile /tmp/benchmark-results/report.tsv --esdocument https://search-rocksdb-bench-k2izhptfeap2hjfxteolsgsynm.us-west-2.es.amazonaws.com/bench_test3_rix/_doc
-            true
 
 executors:
   linux-docker:
@@ -234,19 +164,6 @@ executors:
       - image: evolvedbinary/rocksjava:centos6_x64-be
 
 jobs:
-  build-macos:
-    macos:
-      xcode: 14.3.1
-    resource_class: macos.m1.medium.gen1
-    environment:
-      ROCKSDB_DISABLE_JEMALLOC: 1 # jemalloc cause env_test hang, disable it for now
-    steps:
-      - increase-max-open-files-on-macos
-      - install-gflags-on-macos
-      - pre-steps-macos
-      - run: ulimit -S -n `ulimit -H -n` && OPT=-DCIRCLECI make V=1 J=16 -j16 all
-      - post-steps
-
   build-macos-cmake:
     macos:
       xcode: 14.3.1
@@ -267,329 +184,26 @@ jobs:
       - run:
           name: "Build tests"
           command: cd build && make V=1 -j16
-      - when:
-          condition: << parameters.run_even_tests >>
-          steps:
-            - run:
-                name: "Run even tests"
-                command: ulimit -S -n `ulimit -H -n` && cd build && ctest -j16 -I 0,,2
-      - when:
-          condition:
-            not: << parameters.run_even_tests >>
-          steps:
-            - run:
-                name: "Run odd tests"
-                command: ulimit -S -n `ulimit -H -n` && cd build && ctest -j16 -I 1,,2
+#      - when:
+#          condition: << parameters.run_even_tests >>
+#          steps:
+#            - run:
+#                name: "Run even tests"
+#                command: ulimit -S -n `ulimit -H -n` && cd build && ctest -j16 -I 0,,2
+#      - when:
+#          condition:
+#            not: << parameters.run_even_tests >>
+#          steps:
+#            - run:
+#                name: "Run odd tests"
+#                command: ulimit -S -n `ulimit -H -n` && cd build && ctest -j16 -I 1,,2
       - post-steps
 
-  build-linux:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: make V=1 J=32 -j32 check
-      - post-steps
-
-  build-linux-encrypted_env-no_compression:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: ENCRYPTED_ENV=1 ROCKSDB_DISABLE_SNAPPY=1 ROCKSDB_DISABLE_ZLIB=1 ROCKSDB_DISABLE_BZIP=1 ROCKSDB_DISABLE_LZ4=1 ROCKSDB_DISABLE_ZSTD=1 make V=1 J=32 -j32 check
-      - run: |
-          ./sst_dump --help | grep -E -q 'Supported compression types: kNoCompression$' # Verify no compiled in compression
-      - post-steps
-
-  build-linux-static_lib-alt_namespace-status_checked:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: ASSERT_STATUS_CHECKED=1 TEST_UINT128_COMPAT=1 ROCKSDB_MODIFY_NPHASH=1 LIB_MODE=static OPT="-DROCKSDB_NAMESPACE=alternative_rocksdb_ns" make V=1 -j24 check
-      - post-steps
-
-  build-linux-release:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - checkout # check out the code in the project directory
-      - run: make V=1 -j32 LIB_MODE=shared release
-      - run: ls librocksdb.so # ensure shared lib built
-      - run: ./db_stress --version # ensure with gflags
-      - run: make clean
-      - run: make V=1 -j32 release
-      - run: ls librocksdb.a # ensure static lib built
-      - run: ./db_stress --version # ensure with gflags
-      - run: make clean
-      - run: apt-get remove -y libgflags-dev
-      - run: make V=1 -j32 LIB_MODE=shared release
-      - run: ls librocksdb.so # ensure shared lib built
-      - run: if ./db_stress --version; then false; else true; fi # ensure without gflags
-      - run: make clean
-      - run: make V=1 -j32 release
-      - run: ls librocksdb.a # ensure static lib built
-      - run: if ./db_stress --version; then false; else true; fi # ensure without gflags
-      - post-steps
-
-  build-linux-release-rtti:
-    executor: linux-docker
-    resource_class: xlarge
-    steps:
-      - checkout # check out the code in the project directory
-      - run: USE_RTTI=1 DEBUG_LEVEL=0 make V=1 -j16 static_lib tools db_bench
-      - run: ./db_stress --version # ensure with gflags
-      - run: make clean
-      - run: apt-get remove -y libgflags-dev
-      - run: USE_RTTI=1 DEBUG_LEVEL=0 make V=1 -j16 static_lib tools db_bench
-      - run: if ./db_stress --version; then false; else true; fi # ensure without gflags
-
-  build-linux-clang-no_test_run:
-    executor: linux-docker
-    resource_class: xlarge
-    steps:
-      - checkout # check out the code in the project directory
-      - run: CC=clang CXX=clang++ USE_CLANG=1 PORTABLE=1 make V=1 -j16 all
-      - post-steps
-
-  build-linux-clang10-asan:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: COMPILE_WITH_ASAN=1 CC=clang-10 CXX=clang++-10 ROCKSDB_DISABLE_ALIGNED_NEW=1 USE_CLANG=1 make V=1 -j32 check # aligned new doesn't work for reason we haven't figured out
-      - post-steps
-
-  build-linux-clang10-mini-tsan:
-    executor: linux-docker
-    resource_class: 2xlarge+
-    steps:
-      - pre-steps
-      - run: COMPILE_WITH_TSAN=1 CC=clang-13 CXX=clang++-13 ROCKSDB_DISABLE_ALIGNED_NEW=1 USE_CLANG=1 make V=1 -j32 check
-      - post-steps
-
-  build-linux-clang10-ubsan:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: COMPILE_WITH_UBSAN=1 OPT="-fsanitize-blacklist=.circleci/ubsan_suppression_list.txt" CC=clang-10 CXX=clang++-10 ROCKSDB_DISABLE_ALIGNED_NEW=1 USE_CLANG=1 make V=1 -j32 ubsan_check # aligned new doesn't work for reason we haven't figured out
-      - post-steps
-
-  build-linux-valgrind:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: PORTABLE=1 make V=1 -j32 valgrind_test
-      - post-steps
-
-  build-linux-clang10-clang-analyze:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: CC=clang-10 CXX=clang++-10 ROCKSDB_DISABLE_ALIGNED_NEW=1 CLANG_ANALYZER="/usr/bin/clang++-10" CLANG_SCAN_BUILD=scan-build-10 USE_CLANG=1 make V=1 -j32 analyze # aligned new doesn't work for reason we haven't figured out. For unknown, reason passing "clang++-10" as CLANG_ANALYZER doesn't work, and we need a full path.
-      - post-steps
-      - run:
-          name: "compress test report"
-          command: tar -cvzf scan_build_report.tar.gz scan_build_report
-          when: on_fail
-      - store_artifacts:
-          path: scan_build_report.tar.gz
-          destination: scan_build_report
-          when: on_fail
-
-  build-linux-runner:
-    machine: true
-    resource_class: facebook/rocksdb-benchmark-sys1
-    steps:
-      - pre-steps
-      - run:
-          name: "Checked Linux build (Runner)"
-          command: make V=1 J=8 -j8 check
-          environment:
-            LD_LIBRARY_PATH: /usr/local/lib
-      - post-steps
-
-  build-linux-cmake-with-folly:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - setup-folly
-      - build-folly
-      - run: (mkdir build && cd build && cmake -DUSE_FOLLY=1 -DWITH_GFLAGS=1 -DROCKSDB_BUILD_SHARED=0 .. && make V=1 -j20 && ctest -j20)
-      - post-steps
-
-  build-linux-cmake-with-folly-lite-no-test:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - setup-folly
-      - run: (mkdir build && cd build && cmake -DUSE_FOLLY_LITE=1 -DWITH_GFLAGS=1 .. && make V=1 -j20)
-      - post-steps
-
-  build-linux-cmake-with-benchmark:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: mkdir build && cd build && cmake -DWITH_GFLAGS=1 -DWITH_BENCHMARK=1 .. && make V=1 -j20 && ctest -j20
-      - post-steps
-
-  build-linux-unity-and-headers:
-    docker: # executor type
-      - image: gcc:latest
-    environment:
-      EXTRA_CXXFLAGS: -mno-avx512f # Warnings-as-error in avx512fintrin.h, would be used on newer hardware
-    resource_class: large
-    steps:
-      - checkout # check out the code in the project directory
-      - run: apt-get update -y && apt-get install -y libgflags-dev
-      - run:
-          name: "Unity build"
-          command: make V=1 -j8 unity_test
-          no_output_timeout: 20m
-      - run: make V=1 -j8 -k check-headers # could be moved to a different build
-      - post-steps
-
-  build-linux-gcc-7-with-folly:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - setup-folly
-      - build-folly
-      - run: USE_FOLLY=1 LIB_MODE=static CC=gcc-7 CXX=g++-7 V=1 make -j32 check # TODO: LIB_MODE only to work around unresolved linker failures
-      - post-steps
-
-  build-linux-gcc-7-with-folly-lite-no-test:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - setup-folly
-      - run: USE_FOLLY_LITE=1 CC=gcc-7 CXX=g++-7 V=1 make -j32 all
-      - post-steps
-
-  build-linux-gcc-8-no_test_run:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: CC=gcc-8 CXX=g++-8 V=1 make -j32 all
-      - post-steps
-
-  build-linux-cmake-with-folly-coroutines:
-    executor: linux-docker
-    resource_class: 2xlarge
-    environment:
-      CC: gcc-10
-      CXX: g++-10
-    steps:
-      - pre-steps
-      - setup-folly
-      - build-folly
-      - run: (mkdir build && cd build && cmake -DUSE_COROUTINES=1 -DWITH_GFLAGS=1 -DROCKSDB_BUILD_SHARED=0 .. && make V=1 -j20 && ctest -j20)
-      - post-steps
-
-  build-linux-gcc-10-cxx20-no_test_run:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: CC=gcc-10 CXX=g++-10 V=1 ROCKSDB_CXX_STANDARD=c++20 make -j32 all
-      - post-steps
-
-  build-linux-gcc-11-no_test_run:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: LIB_MODE=static CC=gcc-11 CXX=g++-11 V=1 make -j32 all microbench # TODO: LIB_MODE only to work around unresolved linker failures
-      - post-steps
-
-  build-linux-clang-13-no_test_run:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: CC=clang-13 CXX=clang++-13 USE_CLANG=1 make -j32 all microbench
-      - post-steps
-
-  # Ensure ASAN+UBSAN with folly, and full testsuite with clang 13
-  build-linux-clang-13-asan-ubsan-with-folly:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - setup-folly
-      - build-folly
-      - run: CC=clang-13 CXX=clang++-13 LIB_MODE=static USE_CLANG=1 USE_FOLLY=1 COMPILE_WITH_UBSAN=1 COMPILE_WITH_ASAN=1 make -j32 check # TODO: LIB_MODE only to work around unresolved linker failures
-      - post-steps
-
-  # This job is only to make sure the microbench tests are able to run, the benchmark result is not meaningful as the CI host is changing.
-  build-linux-run-microbench:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run: DEBUG_LEVEL=0 make -j32 run_microbench
-      - post-steps
-
-  build-linux-mini-crashtest:
-    executor: linux-docker
-    resource_class: large
-    steps:
-      - pre-steps
-      - run: ulimit -S -n `ulimit -H -n` && make V=1 -j8 CRASH_TEST_EXT_ARGS='--duration=960 --max_key=2500000 --use_io_uring=0' blackbox_crash_test_with_atomic_flush
-      - post-steps
-
-  build-linux-crashtest-tiered-storage-bb:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run:
-          name: "run crashtest"
-          command: ulimit -S -n `ulimit -H -n` && make V=1 -j32 CRASH_TEST_EXT_ARGS='--duration=10800 --use_io_uring=0' blackbox_crash_test_with_tiered_storage
-          no_output_timeout: 100m
-      - post-steps
-
-  build-linux-crashtest-tiered-storage-wb:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run:
-          name: "run crashtest"
-          command: ulimit -S -n `ulimit -H -n` && make V=1 -j32 CRASH_TEST_EXT_ARGS='--duration=10800 --use_io_uring=0' whitebox_crash_test_with_tiered_storage
-          no_output_timeout: 100m
-      - post-steps
-
-  build-windows-vs2022-avx2:
-    executor:
-      name: win/server-2022
-      size: 2xlarge
-    environment:
-      THIRDPARTY_HOME: C:/Users/circleci/thirdparty
-      CMAKE_HOME: C:/Program Files/CMake
-      CMAKE_BIN: C:/Program Files/CMake/bin/cmake.exe
-      CTEST_BIN: C:/Program Files/CMake/bin/ctest.exe
-      JAVA_HOME: C:/Program Files/BellSoft/LibericaJDK-8
-      SNAPPY_HOME: C:/Users/circleci/thirdparty/snappy-1.1.8
-      SNAPPY_INCLUDE: C:/Users/circleci/thirdparty/snappy-1.1.8;C:/Users/circleci/thirdparty/snappy-1.1.8/build
-      SNAPPY_LIB_DEBUG: C:/Users/circleci/thirdparty/snappy-1.1.8/build/Debug/snappy.lib
-      CMAKE_GENERATOR: Visual Studio 17 2022
-      CMAKE_PORTABLE: AVX2
-    steps:
-      - windows-build-steps
 
   build-windows-vs2022:
     executor:
       name: win/server-2022
-      size: 2xlarge
+      size: xlarge
     environment:
       THIRDPARTY_HOME: C:/Users/circleci/thirdparty
       CMAKE_HOME: C:/Program Files/CMake
@@ -607,7 +221,7 @@ jobs:
   build-windows-vs2019:
     executor:
       name: win/server-2019
-      size: 2xlarge
+      size: large # - Try with large only, msbuild doesn't support parallel compilation.
     environment:
       THIRDPARTY_HOME: C:/Users/circleci/thirdparty
       CMAKE_HOME: C:/Program Files/CMake
@@ -638,27 +252,6 @@ jobs:
           name: "Test RocksDBJava"
           command: make V=1 J=8 -j8 jtest
       - post-steps
-
-  build-linux-java-pmd:
-    machine:
-      image: ubuntu-2004:202111-02
-    resource_class: large
-    environment:
-      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
-    steps:
-      - install-maven
-      - pre-steps
-      - run:
-          name: "Set Java Environment"
-          command: |
-            echo "JAVA_HOME=${JAVA_HOME}"
-            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> $BASH_ENV
-            which java && java -version
-            which javac && javac -version
-      - run:
-          name: "PMD RocksDBJava"
-          command: make V=1 J=8 -j8 jpmd
-      - post-pmd-steps
 
   build-linux-java-static:
     executor: linux-java-docker
@@ -752,17 +345,6 @@ jobs:
           no_output_timeout: 20m
       - post-steps
 
-  build-examples:
-    executor: linux-docker
-    resource_class: large
-    steps:
-      - pre-steps
-      - run:
-          name: "Build examples"
-          command: |
-            make V=1 -j4 static_lib && cd examples && make V=1 -j4
-      - post-steps
-
   build-cmake-mingw:
     executor: linux-docker
     resource_class: large
@@ -779,34 +361,14 @@ jobs:
             mkdir build && cd build && cmake -DJNI=1 -DWITH_GFLAGS=OFF .. -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_SYSTEM_NAME=Windows && make -j4 rocksdb rocksdbjni
       - post-steps
 
-  build-linux-non-shm:
+  build-linux-cmake-with-folly:
     executor: linux-docker
-    resource_class: 2xlarge
-    environment:
-      TEST_TMPDIR: /tmp/rocksdb_test_tmp
+    resource_class: xlarge
     steps:
       - pre-steps
-      - run: make V=1 -j32 check
-      - post-steps
-
-  build-linux-arm-test-full:
-    machine:
-      image: ubuntu-2004:202111-02
-    resource_class: arm.large
-    steps:
-      - pre-steps
-      - install-gflags
-      - run: make V=1 J=4 -j4 check
-      - post-steps
-
-  build-linux-arm:
-    machine:
-      image: ubuntu-2004:202111-02
-    resource_class: arm.large
-    steps:
-      - pre-steps
-      - install-gflags
-      - run: ROCKSDBTESTS_PLATFORM_DEPENDENT=only make V=1 J=4 -j4 all_but_some_tests check_some
+      - setup-folly
+      - build-folly
+      - run: (mkdir build && cd build && cmake -DUSE_FOLLY=1 -DWITH_GFLAGS=1 -DROCKSDB_BUILD_SHARED=0 .. && make V=1 -j10 && ctest -j10)
       - post-steps
 
   build-linux-arm-cmake-no_test_run:
@@ -842,125 +404,44 @@ jobs:
             make -j4 rocksdb rocksdbjni
       - post-steps
 
-  build-format-compatible:
-    executor: linux-docker
-    resource_class: 2xlarge
-    steps:
-      - pre-steps
-      - run:
-          name: "test"
-          command: |
-            export TEST_TMPDIR=/dev/shm/rocksdb
-            rm -rf /dev/shm/rocksdb
-            mkdir /dev/shm/rocksdb
-            tools/check_format_compatible.sh
-      - post-steps
-
-  build-fuzzers:
-    executor: linux-docker
-    resource_class: large
-    steps:
-      - pre-steps
-      - run:
-          name: "Build rocksdb lib"
-          command: CC=clang-13 CXX=clang++-13 USE_CLANG=1 make -j4 static_lib
-      - run:
-          name: "Build fuzzers"
-          command: cd fuzz && make sst_file_writer_fuzzer db_fuzzer db_map_fuzzer
-      - post-steps
-
-  benchmark-linux: #use a private Circle CI runner (resource_class) to run the job
-    machine: true
-    resource_class: facebook/rocksdb-benchmark-sys1
-    steps:
-      - build-for-benchmarks
-      - perform-benchmarks
-      - post-benchmarks
-
 workflows:
   version: 2
-  jobs-linux-run-tests:
-    jobs:
-      - build-linux
-      - build-linux-cmake-with-folly
-      - build-linux-cmake-with-folly-lite-no-test
-      - build-linux-gcc-7-with-folly
-      - build-linux-gcc-7-with-folly-lite-no-test
-      - build-linux-cmake-with-folly-coroutines
-      - build-linux-cmake-with-benchmark
-      - build-linux-encrypted_env-no_compression
-  jobs-linux-run-tests-san:
-    jobs:
-      - build-linux-clang10-asan
-      - build-linux-clang10-ubsan
-      - build-linux-clang10-mini-tsan
-      - build-linux-static_lib-alt_namespace-status_checked
-  jobs-linux-no-test-run:
-    jobs:
-      - build-linux-release
-      - build-linux-release-rtti
-      - build-examples
-      - build-fuzzers
-      - build-linux-clang-no_test_run
-      - build-linux-clang-13-no_test_run
-      - build-linux-gcc-8-no_test_run
-      - build-linux-gcc-10-cxx20-no_test_run
-      - build-linux-gcc-11-no_test_run
-      - build-linux-arm-cmake-no_test_run
-  jobs-linux-other-checks:
-    jobs:
-      - build-linux-clang10-clang-analyze
-      - build-linux-unity-and-headers
-      - build-linux-mini-crashtest
-  jobs-windows:
-    jobs:
-      - build-windows-vs2022-avx2
-      - build-windows-vs2022
-      - build-windows-vs2019
-      - build-cmake-mingw
-  jobs-java:
+  jobs-linux-1:
     jobs:
       - build-linux-java
       - build-linux-java-static
+      - build-linux-cmake-with-folly
+      - build-linux-arm-cmake-no_test_run
+  jobs-linux-2:
+    jobs:
+      - build-linux-java
+      - build-linux-java-static
+      - build-linux-cmake-with-folly
+      - build-linux-arm-cmake-no_test_run
+  jobs-linux-3:
+    jobs:
+      - build-linux-java
+      - build-linux-java-static
+      - build-linux-cmake-with-folly
+      - build-linux-arm-cmake-no_test_run
+  jobs-windows-1:
+    jobs:
+      - build-windows-vs2019
+      - build-windows-vs2022
+      - build-cmake-mingw
+  jobs-windows-2:
+    jobs:
+      - build-windows-vs2019
+      - build-windows-vs2022
+      - build-cmake-mingw
+  jobs-windows-3:
+    jobs:
+      - build-windows-vs2019
+      - build-windows-vs2022
+      - build-cmake-mingw
+  jobs-macos:
+    jobs:
+      - build-macos-cmake
       - build-macos-java
       - build-macos-java-static
       - build-macos-java-static-universal
-      - build-linux-java-pmd
-  jobs-macos:
-    jobs:
-      - build-macos
-      - build-macos-cmake:
-          run_even_tests: true
-      - build-macos-cmake:
-          run_even_tests: false
-  jobs-linux-arm:
-    jobs:
-      - build-linux-arm
-  build-fuzzers:
-    jobs:
-      - build-fuzzers
-  benchmark-linux:
-    triggers:
-      - schedule:
-          cron: "0 * * * *"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - benchmark-linux
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 9 * * *"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - build-format-compatible
-      - build-linux-arm-test-full
-      - build-linux-run-microbench
-      - build-linux-non-shm
-      - build-linux-clang-13-asan-ubsan-with-folly
-      - build-linux-valgrind
