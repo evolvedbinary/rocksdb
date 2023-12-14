@@ -19,7 +19,7 @@ public enum TickerType {
 
     /**
      * total block cache misses
-     *
+     * <p>
      * REQUIRES: BLOCK_CACHE_MISS == BLOCK_CACHE_INDEX_MISS +
      *     BLOCK_CACHE_FILTER_MISS +
      *     BLOCK_CACHE_DATA_MISS;
@@ -28,27 +28,30 @@ public enum TickerType {
 
     /**
      * total block cache hit
-     *
+     * <p>
      * REQUIRES: BLOCK_CACHE_HIT == BLOCK_CACHE_INDEX_HIT +
      *     BLOCK_CACHE_FILTER_HIT +
      *     BLOCK_CACHE_DATA_HIT;
      */
     BLOCK_CACHE_HIT((byte) 0x1),
 
+    /**
+     * Number of blocks added to block cache.
+     */
     BLOCK_CACHE_ADD((byte) 0x2),
 
     /**
-     * # of failures when adding blocks to block cache.
+     * Number of failures when adding blocks to block cache.
      */
     BLOCK_CACHE_ADD_FAILURES((byte) 0x3),
 
     /**
-     * # of times cache miss when accessing index block from block cache.
+     * Number of times cache miss when accessing index block from block cache.
      */
     BLOCK_CACHE_INDEX_MISS((byte) 0x4),
 
     /**
-     * # of times cache hit when accessing index block from block cache.
+     * Number of times cache hit when accessing index block from block cache.
      */
     BLOCK_CACHE_INDEX_HIT((byte) 0x5),
 
@@ -63,12 +66,12 @@ public enum TickerType {
     BLOCK_CACHE_INDEX_BYTES_INSERT((byte) 0x7),
 
     /**
-     * # of times cache miss when accessing filter block from block cache.
+     * Number of times cache miss when accessing filter block from block cache.
      */
     BLOCK_CACHE_FILTER_MISS((byte) 0x9),
 
     /**
-     * # of times cache hit when accessing filter block from block cache.
+     * Number of times cache hit when accessing filter block from block cache.
      */
     BLOCK_CACHE_FILTER_HIT((byte) 0xA),
 
@@ -83,12 +86,12 @@ public enum TickerType {
     BLOCK_CACHE_FILTER_BYTES_INSERT((byte) 0xC),
 
     /**
-     * # of times cache miss when accessing data block from block cache.
+     * Number of times cache miss when accessing data block from block cache.
      */
     BLOCK_CACHE_DATA_MISS((byte) 0xE),
 
     /**
-     * # of times cache hit when accessing data block from block cache.
+     * Number of times cache hit when accessing data block from block cache.
      */
     BLOCK_CACHE_DATA_HIT((byte) 0xF),
 
@@ -113,7 +116,7 @@ public enum TickerType {
     BLOCK_CACHE_BYTES_WRITE((byte) 0x13),
 
     /**
-     * # of times bloom filter has avoided file reads.
+     * Number of times bloom filter has avoided file reads.
      */
     BLOOM_FILTER_USEFUL((byte) 0x14),
 
@@ -163,23 +166,18 @@ public enum TickerType {
     GET_HIT_L2_AND_UP((byte) 0x1D),
 
     /**
-     * COMPACTION_KEY_DROP_* count the reasons for key drop during compaction
-     * There are 4 reasons currently.
-     */
-
-    /**
-     * key was written with a newer value.
+     * Compaction dropped the key because there is a newer entry.
      */
     COMPACTION_KEY_DROP_NEWER_ENTRY((byte) 0x1E),
 
     /**
+     * Compaction dropped the key because it is obsolete.
      * Also includes keys dropped for range del.
-     * The key is obsolete.
      */
     COMPACTION_KEY_DROP_OBSOLETE((byte) 0x1F),
 
     /**
-     * key was covered by a range tombstone.
+     * Compaction dropped the key because it was covered by a range tombstone.
      */
     COMPACTION_KEY_DROP_RANGE_DEL((byte) 0x20),
 
@@ -189,7 +187,7 @@ public enum TickerType {
     COMPACTION_KEY_DROP_USER((byte) 0x21),
 
     /**
-     * all keys in range were deleted.
+     * Compaction dropped the key as all keys in range were deleted.
      */
     COMPACTION_RANGE_DEL_DROP_OBSOLETE((byte) 0x22),
 
@@ -217,7 +215,7 @@ public enum TickerType {
     /**
      * The number of uncompressed bytes read from DB::Get().  It could be
      * either from memtables, cache, or table files.
-     *
+     * <p>
      * For the number of logical bytes read from DB::MultiGet(),
      * please use {@link #NUMBER_MULTIGET_BYTES_READ}.
      */
@@ -259,8 +257,14 @@ public enum TickerType {
      */
     ITER_BYTES_READ((byte) 0x2E),
 
+    /**
+     * The number of calls to open a file.
+     */
     NO_FILE_OPENS((byte) 0x30),
 
+    /**
+     * The number of file errors.
+     */
     NO_FILE_ERRORS((byte) 0x31),
 
     /**
@@ -270,7 +274,7 @@ public enum TickerType {
 
     /**
      * The wait time for db mutex.
-     *
+     * <p>
      * Disabled by default. To enable it set stats level to {@link StatsLevel#ALL}
      */
     DB_MUTEX_WAIT_MICROS((byte) 0x36),
@@ -290,14 +294,21 @@ public enum TickerType {
      */
     NUMBER_MULTIGET_BYTES_READ((byte) 0x3B),
 
+    /**
+     * Number of merge failures.
+     */
     NUMBER_MERGE_FAILURES((byte) 0x3D),
 
     /**
-     * Number of times bloom was checked before creating iterator on a
+     * Number of times the bloom filter was checked before creating iterator on a
      * file, and the number of times the check was useful in avoiding
      * iterator creation (and thus likely IOPs).
      */
     BLOOM_FILTER_PREFIX_CHECKED((byte) 0x3E),
+
+    /**
+     * Number of times the bloom filter returned false, and so prevented accessing data+index blocks.
+     */
     BLOOM_FILTER_PREFIX_USEFUL((byte) 0x3F),
 
     /**
@@ -358,42 +369,75 @@ public enum TickerType {
      * table reader object.
      */
     NUMBER_DIRECT_LOAD_TABLE_PROPERTIES((byte) 0x4F),
+
+    /**
+     * Number of times supervision was acquired.
+     */
     NUMBER_SUPERVERSION_ACQUIRES((byte) 0x50),
+
+    /**
+     * Number of times supervision was released.
+     */
     NUMBER_SUPERVERSION_RELEASES((byte) 0x51),
+
+    /**
+     * Number of times supervision was cleaned up.
+     */
     NUMBER_SUPERVERSION_CLEANUPS((byte) 0x52),
 
     /**
-     * # of compressions/decompressions executed
+     * Number of block compressions executed.
      */
     NUMBER_BLOCK_COMPRESSED((byte) 0x53),
+
+    /**
+     * Number of block de-compressions executed.
+     */
     NUMBER_BLOCK_DECOMPRESSED((byte) 0x54),
 
+    /**
+     * Number of blocks not compressed.
+     */
+    @Deprecated
     NUMBER_BLOCK_NOT_COMPRESSED((byte) 0x55),
+
+    /**
+     * Total time spent on merge operations.
+     */
     MERGE_OPERATION_TOTAL_TIME((byte) 0x56),
+
+    /**
+     * Total time spent on filter operations.
+     */
     FILTER_OPERATION_TOTAL_TIME((byte) 0x57),
 
     /**
-     * Row cache.
+     * Number of row cache hits.
      */
     ROW_CACHE_HIT((byte) 0x58),
+
+    /**
+     * Number of row cache misses.
+     */
     ROW_CACHE_MISS((byte) 0x59),
 
     /**
-     * Read amplification statistics.
-     *
+     * Read amplification estimate of total bytes actually used.
+     * <p>
      * Read amplification can be calculated using this formula
-     * (READ_AMP_TOTAL_READ_BYTES / READ_AMP_ESTIMATE_USEFUL_BYTES)
-     *
+     * ({@link #READ_AMP_TOTAL_READ_BYTES} / #READ_AMP_ESTIMATE_USEFUL_BYTES)
+     * <p>
      * REQUIRES: ReadOptions::read_amp_bytes_per_bit to be enabled
-     */
-
-    /**
-     * Estimate of total bytes actually used.
      */
     READ_AMP_ESTIMATE_USEFUL_BYTES((byte) 0x5A),
 
     /**
-     * Total size of loaded data blocks.
+     * Read amplification estimate of total size of loaded data blocks.
+     * <p>
+     * Read amplification can be calculated using this formula
+     * (READ_AMP_TOTAL_READ_BYTES / {@link #READ_AMP_ESTIMATE_USEFUL_BYTES})
+     * <p>
+     * REQUIRES: ReadOptions::read_amp_bytes_per_bit to be enabled
      */
     READ_AMP_TOTAL_READ_BYTES((byte) 0x5B),
 
@@ -434,12 +478,12 @@ public enum TickerType {
     COMPACTION_CANCELLED((byte) 0x62),
 
     /**
-     * # of times bloom FullFilter has not avoided the reads.
+     * Number of times bloom FullFilter has not avoided the reads.
      */
     BLOOM_FILTER_FULL_POSITIVE((byte) 0x63),
 
     /**
-     * # of times bloom FullFilter has not avoided the reads and data actually
+     * Number of times bloom FullFilter has not avoided the reads and data actually
      * exist.
      */
     BLOOM_FILTER_FULL_TRUE_POSITIVE((byte) 0x64),
@@ -531,7 +575,7 @@ public enum TickerType {
     BLOB_DB_BLOB_FILE_BYTES_READ((byte) 0x75),
 
     /**
-     * # of times a blob files being synced.
+     * Number of times a blob files being synced.
      */
     BLOB_DB_BLOB_FILE_SYNCED((byte) 0x76),
 
@@ -602,27 +646,27 @@ public enum TickerType {
     /**
      * These counters indicate a performance issue in WritePrepared transactions.
      * We should not seem them ticking them much.
-     * # of times prepare_mutex_ is acquired in the fast path.
+     * Number of times prepare_mutex_ is acquired in the fast path.
      */
     TXN_PREPARE_MUTEX_OVERHEAD((byte) -0x09),
 
     /**
-     * # of times old_commit_map_mutex_ is acquired in the fast path.
+     * Number of times old_commit_map_mutex_ is acquired in the fast path.
      */
     TXN_OLD_COMMIT_MAP_MUTEX_OVERHEAD((byte) -0x0A),
 
     /**
-     * # of times we checked a batch for duplicate keys.
+     * Number of times we checked a batch for duplicate keys.
      */
     TXN_DUPLICATE_KEY_OVERHEAD((byte) -0x0B),
 
     /**
-     * # of times snapshot_mutex_ is acquired in the fast path.
+     * Number of times snapshot_mutex_ is acquired in the fast path.
      */
     TXN_SNAPSHOT_MUTEX_OVERHEAD((byte) -0x0C),
 
     /**
-     * # of times ::Get returned TryAgain due to expired snapshot seq
+     * Number of times ::Get returned TryAgain due to expired snapshot seq
      */
     TXN_GET_TRY_AGAIN((byte) -0x0D),
 
@@ -637,23 +681,63 @@ public enum TickerType {
     FILES_DELETED_IMMEDIATELY((byte) -0x0f),
 
     /**
-     * Compaction read and write statistics broken down by CompactionReason
+     * Compaction bytes read and marked.
      */
     COMPACT_READ_BYTES_MARKED((byte) -0x10),
+
+    /**
+     * Periodic compaction bytes read.
+     */
     COMPACT_READ_BYTES_PERIODIC((byte) -0x11),
+
+    /**
+     * Compaction bytes read for TTL.
+     */
     COMPACT_READ_BYTES_TTL((byte) -0x12),
+
+    /**
+     * Compaction bytes written and marked.
+     */
     COMPACT_WRITE_BYTES_MARKED((byte) -0x13),
+
+    /**
+     * Periodic compaction bytes written.
+     */
     COMPACT_WRITE_BYTES_PERIODIC((byte) -0x14),
+
+    /**
+     * Compaction bytes written for TTL.
+     */
     COMPACT_WRITE_BYTES_TTL((byte) -0x15),
 
     /**
-     * DB error handler statistics
+     * DB error handler error count.
      */
     ERROR_HANDLER_BG_ERROR_COUNT((byte) -0x16),
+
+    /**
+     * DB error handler background I/O error count.
+     */
     ERROR_HANDLER_BG_IO_ERROR_COUNT((byte) -0x17),
+
+    /**
+     * DB error handler background retryable I/O error count.
+     */
     ERROR_HANDLER_BG_RETRYABLE_IO_ERROR_COUNT((byte) -0x18),
+
+    /**
+     * DB error handler auto-resume count.
+     */
     ERROR_HANDLER_AUTORESUME_COUNT((byte) -0x19),
+
+    /**
+     * DB error handler auto-resume retry count.
+     */
     ERROR_HANDLER_AUTORESUME_RETRY_TOTAL_COUNT((byte) -0x1A),
+
+    /**
+     * DB error handler auto-resume success count.
+     */
     ERROR_HANDLER_AUTORESUME_SUCCESS_COUNT((byte) -0x1B),
 
     /**
@@ -679,33 +763,73 @@ public enum TickerType {
     VERIFY_CHECKSUM_READ_BYTES((byte) -0x1F),
 
     /**
-     * Bytes read/written while creating backups
+     * Bytes read while creating backups.
      */
     BACKUP_READ_BYTES((byte) -0x20),
+
+    /**
+     * Bytes written while creating backups.
+     */
     BACKUP_WRITE_BYTES((byte) -0x21),
 
     /**
-     * Remote compaction read/write statistics
+     * Bytes read by remote compaction.
      */
     REMOTE_COMPACT_READ_BYTES((byte) -0x22),
+
+    /**
+     * Bytes written by remote compaction.
+     */
     REMOTE_COMPACT_WRITE_BYTES((byte) -0x23),
 
     /**
-     * Tiered storage related statistics
+     * Number of bytes read by tiered storage hot-file(s).
      */
     HOT_FILE_READ_BYTES((byte) -0x24),
+
+    /**
+     * Number of bytes read by tiered storage warm-file(s).
+     */
     WARM_FILE_READ_BYTES((byte) -0x25),
+
+    /**
+     * Number of bytes read by tiered storage cold-file(s).
+     */
     COLD_FILE_READ_BYTES((byte) -0x26),
+
+    /**
+     * Number of reads on tiered storage hot-file(s).
+     */
     HOT_FILE_READ_COUNT((byte) -0x27),
+
+    /**
+     * Number of reads on tiered storage warm-file(s).
+     */
     WARM_FILE_READ_COUNT((byte) -0x28),
+
+    /**
+     * Number of reads on tiered storage cold-file(s).
+     */
     COLD_FILE_READ_COUNT((byte) -0x29),
 
     /**
-     * (non-)last level read statistics
+     * Bytes read from the last level.
      */
     LAST_LEVEL_READ_BYTES((byte) -0x2A),
+
+    /**
+     * Number of reads on the last level.
+     */
     LAST_LEVEL_READ_COUNT((byte) -0x2B),
+
+    /**
+     * Bytes read from non-last level(s).
+     */
     NON_LAST_LEVEL_READ_BYTES((byte) -0x2C),
+
+    /**
+     * Number of reads from non-last level(s).
+     */
     NON_LAST_LEVEL_READ_COUNT((byte) -0x2D),
 
     /**
@@ -714,12 +838,12 @@ public enum TickerType {
     BLOCK_CHECKSUM_COMPUTE_COUNT((byte) -0x2E),
 
     /**
-     * # of times cache miss when accessing blob from blob cache.
+     * Number of times cache miss when accessing blob from blob cache.
      */
     BLOB_DB_CACHE_MISS((byte) -0x2F),
 
     /**
-     * # of times cache hit when accessing blob from blob cache.
+     * Number of times cache hit when accessing blob from blob cache.
      */
     BLOB_DB_CACHE_HIT((byte) -0x30),
 
@@ -764,18 +888,40 @@ public enum TickerType {
      */
     BLOCK_CHECKSUM_MISMATCH_COUNT((byte) -0x3C),
 
+    /**
+     * Number of times readahead is trimmed during scans when
+     * {@link ReadOptions#setReadaheadSize(long)} is set.
+     */
     READAHEAD_TRIMMED((byte) -0x3D),
 
+    /**
+     * FIFO compactions that drop files of a maximum size.
+     */
     FIFO_MAX_SIZE_COMPACTIONS((byte) -0x3E),
 
+    /**
+     * FIFO compactions that drop files exceeding a TTL.
+     */
     FIFO_TTL_COMPACTIONS((byte) -0x3F),
 
+    /**
+     * Number of bytes prefetched during user initiated scan.
+     */
     PREFETCH_BYTES((byte) -0x40),
 
+    /**
+     * Number of prefetched bytes that were actually useful.
+     */
     PREFETCH_BYTES_USEFUL((byte) -0x41),
 
+    /**
+     * Number of FS reads avoided due to scan prefetching.
+     */
     PREFETCH_HITS((byte) -0x42),
 
+    /**
+     * maximum number of ticker types.
+     */
     TICKER_ENUM_MAX((byte) 0x5F);
 
     private final byte value;
