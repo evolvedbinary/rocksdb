@@ -84,7 +84,11 @@ public class TtlDB extends RocksDB {
    */
   public static TtlDB open(final Options options, final String db_path,
       final int ttl, final boolean readOnly) throws RocksDBException {
-    return new TtlDB(open(options.nativeHandle_, db_path, ttl, readOnly));
+
+    final TtlDB db = new TtlDB(open(options.nativeHandle_, db_path, ttl, readOnly));
+    db.storeOptionsInstance(options);
+    db.storeDefaultColumnFamilyHandle(db.makeDefaultColumnFamilyHandle());
+    return db;
   }
 
   /**
