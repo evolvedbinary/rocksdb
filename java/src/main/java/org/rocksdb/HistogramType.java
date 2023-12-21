@@ -171,7 +171,7 @@ public enum HistogramType {
 
   /**
    * BlobDB Put/PutWithTTL/PutUntil/Write latency.
-    * Measured in microseconds.
+   * Measured in microseconds.
    */
   BLOB_DB_WRITE_MICROS((byte) 0x23),
 
