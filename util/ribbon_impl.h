@@ -570,13 +570,17 @@ class StandardBanding : public StandardHasher<TypesAndSettings> {
   template <typename InputIterator>
   bool AddRange(InputIterator begin, InputIterator end) {
     assert(num_starts_ > 0 || TypesAndSettings::kAllowZeroStarts);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Can't add any in this case.
       return begin == end;
     }
+#if defined(_MSC_VER)
 #pragma warning(push)
+#endif
     // Normal
     return BandingAddRange(this, *this, begin, end);
   }
@@ -591,13 +595,17 @@ class StandardBanding : public StandardHasher<TypesAndSettings> {
   template <typename InputIterator>
   bool AddRangeOrRollBack(InputIterator begin, InputIterator end) {
     assert(num_starts_ > 0 || TypesAndSettings::kAllowZeroStarts);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Can't add any in this case.
       return begin == end;
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
     // else Normal
     return BandingAddRange(this, this, *this, begin, end);
   }
@@ -756,8 +764,10 @@ class InMemSimpleSolution {
   template <typename PhsfQueryHasher>
   ResultRow PhsfQuery(const Key& input, const PhsfQueryHasher& hasher) const {
     // assert(!TypesAndSettings::kIsFilter);  Can be useful in testing
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual
       return 0;
@@ -765,14 +775,18 @@ class InMemSimpleSolution {
       // Normal
       return SimplePhsfQuery(input, hasher, *this);
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
   }
 
   template <typename FilterQueryHasher>
   bool FilterQuery(const Key& input, const FilterQueryHasher& hasher) const {
     assert(TypesAndSettings::kIsFilter);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return false;
@@ -781,18 +795,24 @@ class InMemSimpleSolution {
       // thus will always return true.
       return SimpleFilterQuery(input, hasher, *this);
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
   }
 
   double ExpectedFpRate() const {
     assert(TypesAndSettings::kIsFilter);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual, but we don't have FPs if we always return false.
       return 0.0;
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
     // else Normal
 
     // Each result (solution) bit (column) cuts FP rate in half
@@ -904,8 +924,10 @@ class SerializableInterleavedSolution {
 
   template <typename BandingStorage>
   void BackSubstFrom(const BandingStorage& bs) {
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && bs.GetNumStarts() == 0) {
       // Unusual
       PrepareForNumStarts(0);
@@ -913,7 +935,9 @@ class SerializableInterleavedSolution {
       // Normal
       InterleavedBackSubst(this, bs);
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
   }
 
   template <typename PhsfQueryHasher>
@@ -939,8 +963,10 @@ class SerializableInterleavedSolution {
   template <typename FilterQueryHasher>
   bool FilterQuery(const Key& input, const FilterQueryHasher& hasher) const {
     assert(TypesAndSettings::kIsFilter);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return false;
@@ -957,18 +983,24 @@ class SerializableInterleavedSolution {
       return InterleavedFilterQuery(hash, segment_num, num_columns, start_bit,
                                     hasher, *this);
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
   }
 
   double ExpectedFpRate() const {
     assert(TypesAndSettings::kIsFilter);
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4127)
+#endif
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return 0.0;
     }
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
     // else Normal
 
     // Note: Ignoring smash setting; still close enough in that case
