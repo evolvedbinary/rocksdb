@@ -36,7 +36,7 @@ struct BandingConfigHelperData {
   // (Would be a constant if we had partial template specialization for
   // static const members.)
   static inline double GetFactorPerPow2() {
-    if (kCoeffBits == 128U) {
+    if constexpr (kCoeffBits == 128U) {
       return 0.0038;
     } else {
       assert(kCoeffBits == 64U);

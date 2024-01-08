@@ -114,7 +114,7 @@ class BasicTypedCacheHelperFns {
     // FIXME: Currently, no callers actually allocate the ObjectPtr objects
     // using the custom allocator, just subobjects that keep a reference to
     // the allocator themselves (with CacheAllocationPtr).
-    if (/*DISABLED*/ false && allocator) {
+    if constexpr (/*DISABLED*/ false && allocator) {
       if constexpr (std::is_destructible_v<TValue>) {
         DownCastValue(value)->~TValue();
       }

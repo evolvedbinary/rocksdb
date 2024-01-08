@@ -1698,7 +1698,8 @@ INSTANTIATE_TEST_CASE_P(
 
 TEST(OccLockBucketsTest, CacheAligned) {
   // Typical x86_64 is 40 byte mutex, 64 byte cache line
-  if (sizeof(port::Mutex) >= sizeof(CacheAlignedWrapper<port::Mutex>)) {
+  if constexpr (sizeof(port::Mutex) >=
+                sizeof(CacheAlignedWrapper<port::Mutex>)) {
     ROCKSDB_GTEST_BYPASS("Test requires mutex smaller than cache line");
     return;
   }

@@ -5750,7 +5750,7 @@ TEST_P(TransactionStressTest, SeqAdvanceTest) {
       seq = db_impl->TEST_GetLastVisibleSequence();
       ASSERT_EQ(exp_seq, seq);
     }
-    if (!short_test && branch_do(n, &branch)) {
+    if constexpr (!short_test && branch_do(n, &branch)) {
       ASSERT_OK(db_impl->FlushWAL(true));
       ASSERT_OK(ReOpenNoDelete());
       db_impl = static_cast_with_check<DBImpl>(db->GetRootDB());
@@ -5772,7 +5772,7 @@ TEST_P(TransactionStressTest, SeqAdvanceTest) {
       seq = db_impl->TEST_GetLastVisibleSequence();
       ASSERT_EQ(exp_seq, seq);
     }
-    if (!short_test && branch_do(n, &branch)) {
+    if constexpr (!short_test && branch_do(n, &branch)) {
       ASSERT_OK(db_impl->FlushWAL(true));
       ASSERT_OK(ReOpenNoDelete());
       db_impl = static_cast_with_check<DBImpl>(db->GetRootDB());
@@ -5789,7 +5789,7 @@ TEST_P(TransactionStressTest, SeqAdvanceTest) {
       seq = db_impl->TEST_GetLastVisibleSequence();
       ASSERT_EQ(exp_seq, seq);
     }
-    if (!short_test && branch_do(n, &branch)) {
+    if constexpr (!short_test && branch_do(n, &branch)) {
       ASSERT_OK(db_impl->FlushWAL(true));
       ASSERT_OK(ReOpenNoDelete());
       db_impl = static_cast_with_check<DBImpl>(db->GetRootDB());
@@ -5807,7 +5807,7 @@ TEST_P(TransactionStressTest, SeqAdvanceTest) {
       seq = db_impl->TEST_GetLastVisibleSequence();
       ASSERT_EQ(exp_seq, seq);
     }
-    if (!short_test && branch_do(n, &branch)) {
+    if constexpr (!short_test && branch_do(n, &branch)) {
       ASSERT_OK(db_impl->FlushWAL(true));
       ASSERT_OK(ReOpenNoDelete());
       db_impl = static_cast_with_check<DBImpl>(db->GetRootDB());
@@ -5824,7 +5824,7 @@ TEST_P(TransactionStressTest, SeqAdvanceTest) {
       seq = db_impl->TEST_GetLastVisibleSequence();
       ASSERT_EQ(exp_seq, seq);
     }
-    if (!short_test && branch_do(n, &branch)) {
+    if constexpr (!short_test && branch_do(n, &branch)) {
       ASSERT_OK(db_impl->FlushWAL(true));
       ASSERT_OK(ReOpenNoDelete());
       db_impl = static_cast_with_check<DBImpl>(db->GetRootDB());

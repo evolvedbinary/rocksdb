@@ -261,7 +261,7 @@ class StandardHasher {
     // If that's big enough, we're done. If not, we have to expand it,
     // maybe up to 4x size.
     uint64_t b;
-    if (sizeof(Hash) < sizeof(uint64_t)) {
+    if constexpr (sizeof(Hash) < sizeof(uint64_t)) {
       // Almost-trivial hash expansion (OK - see above), favoring roughly
       // equal number of 1's and 0's in result
       b = (uint64_t{a} << 32) ^ (a ^ kCoeffXor32);
@@ -270,7 +270,7 @@ class StandardHasher {
     }
     static_assert(sizeof(CoeffRow) <= sizeof(Unsigned128), "Supported sizes");
     Unsigned128 c;
-    if (sizeof(uint64_t) < sizeof(CoeffRow)) {
+    if constexpr (sizeof(uint64_t) < sizeof(CoeffRow)) {
       // Almost-trivial hash expansion (OK - see above), favoring roughly
       // equal number of 1's and 0's in result
       c = (Unsigned128{b} << 64) ^ (b ^ kCoeffXor64);
@@ -282,7 +282,7 @@ class StandardHasher {
     // Now ensure the value is non-zero
     if (kFirstCoeffAlwaysOne) {
       cr |= 1;
-    } else if (sizeof(CoeffRow) == sizeof(Hash)) {
+    } else if constexpr (sizeof(CoeffRow) == sizeof(Hash)) {
       // Still have to ensure some bit is non-zero
       cr |= (cr == 0) ? 1 : 0;
     } else {
@@ -298,7 +298,8 @@ class StandardHasher {
     return static_cast<ResultRow>(~ResultRow{0});
   }
   inline ResultRow GetResultRowFromHash(Hash h) const {
-    if (TypesAndSettings::kIsFilter && !TypesAndSettings::kHomogeneous) {
+    if constexpr (TypesAndSettings::kIsFilter &&
+                  !TypesAndSettings::kHomogeneous) {
       // This is not so much "critical path" code because it can be done in
       // parallel (instruction level) with memory lookup.
       //
@@ -569,10 +570,13 @@ class StandardBanding : public StandardHasher<TypesAndSettings> {
   template <typename InputIterator>
   bool AddRange(InputIterator begin, InputIterator end) {
     assert(num_starts_ > 0 || TypesAndSettings::kAllowZeroStarts);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Can't add any in this case.
       return begin == end;
     }
+#pragma warning(push)
     // Normal
     return BandingAddRange(this, *this, begin, end);
   }
@@ -587,10 +591,13 @@ class StandardBanding : public StandardHasher<TypesAndSettings> {
   template <typename InputIterator>
   bool AddRangeOrRollBack(InputIterator begin, InputIterator end) {
     assert(num_starts_ > 0 || TypesAndSettings::kAllowZeroStarts);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Can't add any in this case.
       return begin == end;
     }
+#pragma warning(pop)
     // else Normal
     return BandingAddRange(this, this, *this, begin, end);
   }
@@ -749,6 +756,8 @@ class InMemSimpleSolution {
   template <typename PhsfQueryHasher>
   ResultRow PhsfQuery(const Key& input, const PhsfQueryHasher& hasher) const {
     // assert(!TypesAndSettings::kIsFilter);  Can be useful in testing
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual
       return 0;
@@ -756,11 +765,14 @@ class InMemSimpleSolution {
       // Normal
       return SimplePhsfQuery(input, hasher, *this);
     }
+#pragma warning(pop)
   }
 
   template <typename FilterQueryHasher>
   bool FilterQuery(const Key& input, const FilterQueryHasher& hasher) const {
     assert(TypesAndSettings::kIsFilter);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return false;
@@ -769,14 +781,18 @@ class InMemSimpleSolution {
       // thus will always return true.
       return SimpleFilterQuery(input, hasher, *this);
     }
+#pragma warning(pop)
   }
 
   double ExpectedFpRate() const {
     assert(TypesAndSettings::kIsFilter);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual, but we don't have FPs if we always return false.
       return 0.0;
     }
+#pragma warning(pop)
     // else Normal
 
     // Each result (solution) bit (column) cuts FP rate in half
@@ -888,6 +904,8 @@ class SerializableInterleavedSolution {
 
   template <typename BandingStorage>
   void BackSubstFrom(const BandingStorage& bs) {
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && bs.GetNumStarts() == 0) {
       // Unusual
       PrepareForNumStarts(0);
@@ -895,6 +913,7 @@ class SerializableInterleavedSolution {
       // Normal
       InterleavedBackSubst(this, bs);
     }
+#pragma warning(pop)
   }
 
   template <typename PhsfQueryHasher>
@@ -920,6 +939,8 @@ class SerializableInterleavedSolution {
   template <typename FilterQueryHasher>
   bool FilterQuery(const Key& input, const FilterQueryHasher& hasher) const {
     assert(TypesAndSettings::kIsFilter);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return false;
@@ -936,14 +957,18 @@ class SerializableInterleavedSolution {
       return InterleavedFilterQuery(hash, segment_num, num_columns, start_bit,
                                     hasher, *this);
     }
+#pragma warning(pop)
   }
 
   double ExpectedFpRate() const {
     assert(TypesAndSettings::kIsFilter);
+#pragma warning(push)
+#pragma warning(disable : 4127)
     if (TypesAndSettings::kAllowZeroStarts && num_starts_ == 0) {
       // Unusual. Zero starts presumes no keys added -> always false
       return 0.0;
     }
+#pragma warning(pop)
     // else Normal
 
     // Note: Ignoring smash setting; still close enough in that case

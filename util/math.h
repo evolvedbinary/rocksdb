@@ -54,7 +54,7 @@ inline int FloorLog2(T v) {
 #ifdef _MSC_VER
   static_assert(sizeof(T) <= sizeof(uint64_t), "type too big");
   unsigned long idx = 0;
-  if (sizeof(T) <= sizeof(uint32_t)) {
+  if constexpr (sizeof(T) <= sizeof(uint32_t)) {
     _BitScanReverse(&idx, static_cast<uint32_t>(v));
   } else {
 #if defined(_M_X64) || defined(_M_ARM64)
@@ -107,7 +107,7 @@ inline int CountTrailingZeroBits(T v) {
 #ifdef _MSC_VER
   static_assert(sizeof(T) <= sizeof(uint64_t), "type too big");
   unsigned long tz = 0;
-  if (sizeof(T) <= sizeof(uint32_t)) {
+  if constexpr (sizeof(T) <= sizeof(uint32_t)) {
     _BitScanForward(&tz, static_cast<uint32_t>(v));
   } else {
 #if defined(_M_X64) || defined(_M_ARM64)
@@ -176,7 +176,7 @@ inline int BitsSetToOne(T v) {
 
 #ifdef _MSC_VER
   static_assert(sizeof(T) <= sizeof(uint64_t), "type too big");
-  if (sizeof(T) < sizeof(uint32_t)) {
+  if constexpr (sizeof(T) < sizeof(uint32_t)) {
     // This bit mask is to avoid a compiler warning on unused path
     constexpr auto mm = 8 * sizeof(uint32_t) - 1;
     // The bit mask is to neutralize sign extension on small signed types
@@ -186,7 +186,7 @@ inline int BitsSetToOne(T v) {
 #else
     return static_cast<int>(detail::BitsSetToOneFallback(v) & m);
 #endif  // __POPCNT__
-  } else if (sizeof(T) == sizeof(uint32_t)) {
+  } else if constexpr (sizeof(T) == sizeof(uint32_t)) {
 #if __POPCNT__
     return static_cast<int>(__popcnt(static_cast<uint32_t>(v)));
 #else
@@ -253,13 +253,12 @@ inline T EndianSwapValue(T v) {
   static_assert(!std::is_reference_v<T>, "use std::remove_reference_t");
 
 #ifdef _MSC_VER
-  if (sizeof(T) == 2) {
+  if constexpr (sizeof(T) == 2) {
     return static_cast<T>(_byteswap_ushort(static_cast<uint16_t>(v)));
-  } else if (sizeof(T) == 4) {
+  } else if constexpr (sizeof(T) == 4) {
     return static_cast<T>(_byteswap_ulong(static_cast<uint32_t>(v)));
-  } else if (sizeof(T) == 8) {
+  } else if constexpr (sizeof(T) == 8) {
     return static_cast<T>(_byteswap_uint64(static_cast<uint64_t>(v)));
-  }
 #else
   if (sizeof(T) == 2) {
     return static_cast<T>(__builtin_bswap16(static_cast<uint16_t>(v)));
@@ -267,14 +266,15 @@ inline T EndianSwapValue(T v) {
     return static_cast<T>(__builtin_bswap32(static_cast<uint32_t>(v)));
   } else if (sizeof(T) == 8) {
     return static_cast<T>(__builtin_bswap64(static_cast<uint64_t>(v)));
-  }
 #endif
-  // Recognized by clang as bswap, but not by gcc :(
-  T ret_val = 0;
-  for (std::size_t i = 0; i < sizeof(T); ++i) {
-    ret_val |= ((v >> (8 * i)) & 0xff) << (8 * (sizeof(T) - 1 - i));
+  } else {
+    // Recognized by clang as bswap, but not by gcc :(
+    T ret_val = 0;
+    for (std::size_t i = 0; i < sizeof(T); ++i) {
+      ret_val |= ((v >> (8 * i)) & 0xff) << (8 * (sizeof(T) - 1 - i));
+    }
+    return ret_val;
   }
-  return ret_val;
 }
 
 // Reverses the order of bits in an integral value

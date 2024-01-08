@@ -837,9 +837,9 @@ TEST_P(PlainTableDBTest, BloomSchema) {
       uint32_t pattern;
       if (!bloom_locality) {
         pattern = 1785868347UL;
-      } else if (CACHE_LINE_SIZE == 64U) {
+      } else if constexpr (CACHE_LINE_SIZE == 64U) {
         pattern = 2421694657UL;
-      } else if (CACHE_LINE_SIZE == 128U) {
+      } else if constexpr (CACHE_LINE_SIZE == 128U) {
         pattern = 788710956UL;
       } else {
         ASSERT_EQ(CACHE_LINE_SIZE, 256U);

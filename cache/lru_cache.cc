@@ -504,7 +504,7 @@ bool LRUCacheShard::Release(LRUHandle* e, bool /*useful*/,
   if (must_free) {
     // Only call eviction callback if we're sure no one requested erasure
     // FIXME: disabled because of test churn
-    if (false && was_in_cache && !erase_if_last_ref && eviction_callback_ &&
+    if constexpr (false && was_in_cache && !erase_if_last_ref && eviction_callback_ &&
         eviction_callback_(e->key(), static_cast<Cache::Handle*>(e),
                            e->HasHit())) {
       // Callback took ownership of obj; just free handle
