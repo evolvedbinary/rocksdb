@@ -998,6 +998,11 @@ char temp_id[MAX_ID_SIZE];
 // false if anything fails.
 // Note that this function "knows" that dir has just been created
 // and is empty, so we create a simply-named test file: "f".
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#endif
 bool ioctl_support__FS_IOC_GETVERSION(const std::string& dir) {
 #ifdef OS_WIN
   return true;
@@ -1016,6 +1021,9 @@ bool ioctl_support__FS_IOC_GETVERSION(const std::string& dir) {
   return ok;
 #endif
 }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 // To ensure that Env::GetUniqueId-related tests work correctly, the files
 // should be stored in regular storage like "hard disk" or "flash device",

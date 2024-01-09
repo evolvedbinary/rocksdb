@@ -13,6 +13,10 @@
 
 namespace ROCKSDB_NAMESPACE {
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#endif
 namespace ribbon {
 
 // RIBBON PHSF & RIBBON Filter (Rapid Incremental Boolean Banding ON-the-fly)
@@ -1118,6 +1122,10 @@ class SerializableInterleavedSolution {
 };
 
 }  // namespace ribbon
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 }  // namespace ROCKSDB_NAMESPACE
 

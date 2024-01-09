@@ -1091,7 +1091,7 @@ Status WinEnvIO::GetHostName(char* name, uint64_t len) {
 IOStatus WinFileSystem::GetAbsolutePath(const std::string& db_path,
                                         const IOOptions& /*options*/,
                                         std::string* output_path,
-                                        IODebugContext* dbg) {
+                                        IODebugContext*) {
   // Check if we already have an absolute path
   // For test compatibility we will consider starting slash as an
   // absolute path

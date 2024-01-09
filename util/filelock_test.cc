@@ -48,11 +48,18 @@ class LockTest : public testing::Test {
     return CheckFileLock(/* lock_expected = */ false);
   }
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#endif
   bool CheckFileLock(bool lock_expected) {
     // We need to fork to check the fcntl lock as we need
     // to open and close the file from a different process
     // to avoid either releasing the lock on close, or not
     // contending for it when requesting a lock.
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #ifdef OS_WIN
 

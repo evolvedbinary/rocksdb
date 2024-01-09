@@ -220,8 +220,7 @@ WinMmapReadableFile::~WinMmapReadableFile() {
 
 IOStatus WinMmapReadableFile::Read(uint64_t offset, size_t n,
                                    const IOOptions& /*options*/, Slice* result,
-                                   char* scratch,
-                                   IODebugContext* /*dbg*/) const {
+                                   char*, IODebugContext* /*dbg*/) const {
   IOStatus s;
 
   if (offset > length_) {
@@ -234,7 +233,7 @@ IOStatus WinMmapReadableFile::Read(uint64_t offset, size_t n,
   return s;
 }
 
-IOStatus WinMmapReadableFile::InvalidateCache(size_t offset, size_t length) {
+IOStatus WinMmapReadableFile::InvalidateCache(size_t, size_t) {
   return IOStatus::OK();
 }
 
@@ -428,7 +427,7 @@ IOStatus WinMmapFile::Append(const Slice& data, const IOOptions& options,
 
 // Means Close() will properly take care of truncate
 // and it does not need any additional information
-IOStatus WinMmapFile::Truncate(uint64_t size, const IOOptions& /*options*/,
+IOStatus WinMmapFile::Truncate(uint64_t, const IOOptions& /*options*/,
                                IODebugContext* /*dbg*/) {
   return IOStatus::OK();
 }
@@ -542,9 +541,7 @@ uint64_t WinMmapFile::GetFileSize(const IOOptions& /*options*/,
   return file_offset_ + used;
 }
 
-IOStatus WinMmapFile::InvalidateCache(size_t offset, size_t length) {
-  return IOStatus::OK();
-}
+IOStatus WinMmapFile::InvalidateCache(size_t, size_t) { return IOStatus::OK(); }
 
 IOStatus WinMmapFile::Allocate(uint64_t offset, uint64_t len,
                                const IOOptions& /*options*/,
@@ -665,7 +662,7 @@ IOStatus WinSequentialFile::Skip(uint64_t n) {
   return IOStatus::OK();
 }
 
-IOStatus WinSequentialFile::InvalidateCache(size_t offset, size_t length) {
+IOStatus WinSequentialFile::InvalidateCache(size_t, size_t) {
   return IOStatus::OK();
 }
 
@@ -723,7 +720,7 @@ IOStatus WinRandomAccessFile::Read(uint64_t offset, size_t n,
   return ReadImpl(offset, n, result, scratch);
 }
 
-IOStatus WinRandomAccessFile::InvalidateCache(size_t offset, size_t length) {
+IOStatus WinRandomAccessFile::InvalidateCache(size_t, size_t) {
   return IOStatus::OK();
 }
 

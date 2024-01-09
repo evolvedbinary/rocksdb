@@ -175,7 +175,7 @@ UnrefHandler thread_local_inclass_routine = nullptr;
 pthread_key_t thread_local_key = pthread_key_t(-1);
 
 // Static callback function to call with each thread termination.
-void NTAPI WinOnThreadExit(PVOID module, DWORD reason, PVOID reserved) {
+void NTAPI WinOnThreadExit(PVOID, DWORD reason, PVOID) {
   // We decided to punt on PROCESS_EXIT
   if (DLL_THREAD_DETACH == reason) {
     if (thread_local_key != pthread_key_t(-1) &&

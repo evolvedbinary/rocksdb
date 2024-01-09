@@ -21,6 +21,11 @@
 #include <immintrin.h>
 #endif
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#endif
+
 namespace ROCKSDB_NAMESPACE {
 
 class BloomMath {
@@ -487,3 +492,6 @@ class LegacyLocalityBloomImpl {
 };
 
 }  // namespace ROCKSDB_NAMESPACE
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
