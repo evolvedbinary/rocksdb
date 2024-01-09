@@ -298,7 +298,11 @@ class StandardHasher {
     return static_cast<ResultRow>(~ResultRow{0});
   }
   inline ResultRow GetResultRowFromHash(Hash h) const {
-    if constexpr (TypesAndSettings::kIsFilter &&
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
+    if (TypesAndSettings::kIsFilter &&
                   !TypesAndSettings::kHomogeneous) {
       // This is not so much "critical path" code because it can be done in
       // parallel (instruction level) with memory lookup.
@@ -322,6 +326,9 @@ class StandardHasher {
       // Must be zero
       return 0;
     }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
   }
   // For when AddInput == Key (kIsFilter == true)
   inline ResultRow GetResultRowFromInput(const Key&) const {
