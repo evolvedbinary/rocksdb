@@ -302,8 +302,7 @@ class StandardHasher {
 #pragma warning(push)
 #pragma warning(disable : 4127)
 #endif
-    if (TypesAndSettings::kIsFilter &&
-                  !TypesAndSettings::kHomogeneous) {
+    if (TypesAndSettings::kIsFilter && !TypesAndSettings::kHomogeneous) {
       // This is not so much "critical path" code because it can be done in
       // parallel (instruction level) with memory lookup.
       //
