@@ -1598,7 +1598,7 @@ BlockBasedTable::MaybeReadBlockAndLoadToCache(
           rep_->blocks_maybe_compressed;
       // This flag, if true, tells BlockFetcher to return the uncompressed
       // block when ReadBlockContents() is called.
-      const bool do_uncompress = maybe_compressed;
+      bool do_uncompress = maybe_compressed;
       CompressionType contents_comp_type;
       // Maybe serialized or uncompressed
       BlockContents tmp_contents;
@@ -1650,10 +1650,6 @@ BlockBasedTable::MaybeReadBlockAndLoadToCache(
           }
         }
         if (s.ok()) {
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
-#endif
           if (do_uncompress && contents_comp_type != kNoCompression) {
             comp_contents = BlockContents(block_fetcher.GetCompressedBlock());
             uncomp_contents = std::move(tmp_contents);
@@ -1664,9 +1660,6 @@ BlockBasedTable::MaybeReadBlockAndLoadToCache(
           } else {
             uncomp_contents = std::move(tmp_contents);
           }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif
 
           // If filling cache is allowed and a cache is configured, try to put
           // the block to the cache. Do this here while block_fetcher is in

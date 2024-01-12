@@ -352,11 +352,8 @@ Options DBTestBase::GetOptions(
       "NewWritableFile:O_DIRECT");
 #endif
   // kMustFreeHeapAllocations -> indicates ASAN build
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
-#endif
-  if (kMustFreeHeapAllocations && !options_override.full_block_cache) {
+  if constexpr (kMustFreeHeapAllocations &&
+                !options_override.full_block_cache) {
     // Detecting block cache use-after-free is normally difficult in unit
     // tests, because as a cache, it tends to keep unreferenced entries in
     // memory, and we normally want unit tests to take advantage of block
@@ -366,9 +363,6 @@ Options DBTestBase::GetOptions(
     // added but are immediately freed on no more references.
     table_options.block_cache = NewLRUCache(/* too small */ 1);
   }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif
 
   bool can_allow_mmap = IsMemoryMappedAccessSupported();
   switch (option_config) {
