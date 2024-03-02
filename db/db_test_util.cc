@@ -352,8 +352,12 @@ Options DBTestBase::GetOptions(
       "NewWritableFile:O_DIRECT");
 #endif
   // kMustFreeHeapAllocations -> indicates ASAN build
+#if defined(__SANITIZE_ADDRESS__)
+  if (kMustFreeHeapAllocations && !options_override.full_block_cache) {
+#else
   if constexpr (kMustFreeHeapAllocations &&
                 !options_override.full_block_cache) {
+#endif
     // Detecting block cache use-after-free is normally difficult in unit
     // tests, because as a cache, it tends to keep unreferenced entries in
     // memory, and we normally want unit tests to take advantage of block
