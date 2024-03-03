@@ -21,6 +21,10 @@
 #include "utilities/fault_injection_env.h"
 #include "utilities/fault_injection_fs.h"
 
+#ifdef OS_WIN
+#define sleep(x) Sleep(x)
+#endif
+
 namespace ROCKSDB_NAMESPACE {
 
 // Test variations of WriteImpl.
