@@ -352,8 +352,14 @@ Options DBTestBase::GetOptions(
       "NewWritableFile:O_DIRECT");
 #endif
   // kMustFreeHeapAllocations -> indicates ASAN build
-#if defined(__SANITIZE_ADDRESS__)
+
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
   if (kMustFreeHeapAllocations && !options_override.full_block_cache) {
+#else
+  if constexpr (kMustFreeHeapAllocations &&
+                !options_override.full_block_cache) {
+#endif
 #else
   if constexpr (kMustFreeHeapAllocations &&
                 !options_override.full_block_cache) {
