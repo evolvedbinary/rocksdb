@@ -1284,6 +1284,7 @@ endif()
 
 if(WITH_TESTS)
   set(TESTS
+        db/blob_test.cc
         db/db_basic_test.cc
         env/env_basic_test.cc
   )

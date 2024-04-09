@@ -88,6 +88,13 @@ jlong Java_org_rocksdb_RocksDB_openROnly__JLjava_lang_String_2Z(
       [error_if_wal_file_exists](const ROCKSDB_NAMESPACE::Options& options,
                                  const std::string& db_path,
                                  ROCKSDB_NAMESPACE::DB** db) {
+
+        printf("  Open read only options : enable_blob_files %d : min_blob_size: %lld\n",
+               options.enable_blob_files,
+               options.min_blob_size
+        );
+
+
         return ROCKSDB_NAMESPACE::DB::OpenForReadOnly(options, db_path, db,
                                                       error_if_wal_file_exists);
       });
@@ -1453,13 +1460,25 @@ jbyteArray Java_org_rocksdb_RocksDB_get__J_3BII(JNIEnv* env, jclass,
   try {
     ROCKSDB_NAMESPACE::JByteArraySlice key(env, jkey, jkey_off, jkey_len);
     ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
+
+    auto read_status = db->Get(ROCKSDB_NAMESPACE::ReadOptions(), db->DefaultColumnFamily(),
+                               key.slice(), &value.pinnable_slice());
+
+    printf("  Read status: %d, enable_blob_files %d : min_blob_size: %lld\n",
+           read_status.code(),
+           db->GetOptions().enable_blob_files,
+           db->GetOptions().min_blob_size
+           );
+    std::cout << "  Key for read : " << std::string(key.slice().data(), key.slice().size()) << "\n";
+    std::cout.flush();
+
     ROCKSDB_NAMESPACE::KVException::ThrowOnError(
-        env,
-        db->Get(ROCKSDB_NAMESPACE::ReadOptions(), db->DefaultColumnFamily(),
-                key.slice(), &value.pinnable_slice()));
+        env, read_status  );
     return value.NewByteArray();
 
   } catch (ROCKSDB_NAMESPACE::KVException&) {
+    std::cout << "  Exception at read operation \n";
+    std::cout.flush();
     return nullptr;
   }
 }
