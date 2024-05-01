@@ -1,29 +1,8 @@
 
 #include <cstring>
-
 #include "db/db_test_util.h"
-#include "options/options_helper.h"
-#include "port/stack_trace.h"
-#include "rocksdb/filter_policy.h"
-#include "rocksdb/flush_block_policy.h"
-#include "rocksdb/merge_operator.h"
-#include "rocksdb/perf_context.h"
-#include "rocksdb/table.h"
-#include "rocksdb/utilities/debug.h"
-#include "table/block_based/block_based_table_reader.h"
-#include "table/block_based/block_builder.h"
-#include "test_util/sync_point.h"
-#include "util/file_checksum_helper.h"
-#include "util/random.h"
-#include "utilities/counted_fs.h"
-#include "utilities/fault_injection_env.h"
-#include "utilities/fault_injection_fs.h"
-#include "utilities/merge_operators.h"
-#include "utilities/merge_operators/string_append/stringappend.h"
-
 
 namespace ROCKSDB_NAMESPACE {
-
 
 class BlobTest : public DBTestBase {
  public:
@@ -31,60 +10,57 @@ class BlobTest : public DBTestBase {
 
 };
 
-TEST_F(BlobTest, ReadOnlyWithBlob) {
-  const int min_blob_size = 1000;
-  // const int blob_size = min_blob_size + 10;
-  const int blob_size = min_blob_size;
-  const auto db_path = "c:\\tmp";
-  const auto checkpoint_path = "c:\\tmp\\checkpoint";
+TEST_F(BlobTest, BlobSnapshotError) {
 
-  Options options = CurrentOptions();
+  const int blob_size = 1000;
+  //auto options = CurrentOptions(); // Everything works when we create options with this method.
+  auto options = ROCKSDB_NAMESPACE::Options();
   options.create_if_missing = true;
   options.enable_blob_files = true;
-  options.min_blob_size = min_blob_size;
+  options.min_blob_size = blob_size;
 
-  DB* db2 = nullptr;
-
-  ASSERT_OK(DB::Open(options, db_path, &db2));
-//  ASSERT_OK(db2->Put(WriteOptions(), Slice("key"), Slice("value")));
-//
-  std::string read_result;
-//  Status readStatus = db2->Get(ReadOptions(), Slice("key"), &read_result);
-//  EXPECT_EQ(std::string("value"), read_result);
+  std::string path = "c:\\tmp\\";
+  std::string checkpointPath = path + "\\checkpoint";
 
   auto big_value = std::make_unique<char[]>(blob_size);
   for (int i = 0; i < blob_size; i++) {
     big_value[i] = 'a';
   }
-  ASSERT_OK(db2->Put(WriteOptions(), Slice("key2"),
-                     Slice(big_value.get(), blob_size)));
-  ASSERT_OK(db2->Get(ReadOptions(), Slice("key2"), &read_result));
-  ASSERT_EQ(std::string(big_value.get(), blob_size), read_result);
 
-  Checkpoint* checkpoint;
-  ASSERT_OK(Checkpoint::Create(db2, &checkpoint));
-  ASSERT_OK(checkpoint->CreateCheckpoint(checkpoint_path));
+  auto value = Slice(big_value.get(), blob_size);
+  auto key = Slice("some_key");
 
-  delete checkpoint;
+  { // Create DB, Write data and create checkpoint.
+    DB* db = nullptr;
 
-  db2->Close();
-  delete db2;
+    ASSERT_OK(rocksdb::DB::Open(options, path, &db));
+    ASSERT_OK(db->Put(rocksdb::WriteOptions(),key, value ));
 
-  DB* db3 = nullptr;
+    PinnableSlice result_slice;
+    ASSERT_OK(db->Get(rocksdb::ReadOptions(), db->DefaultColumnFamily(), key,
+                      &result_slice));  //Verify data are in DB
+    result_slice.Reset();
 
-  ASSERT_OK(DB::OpenForReadOnly(options, checkpoint_path, &db3, false));
+    Checkpoint* checkpoint;
+    ASSERT_OK(Checkpoint::Create(db, &checkpoint));
+    ASSERT_OK(checkpoint->CreateCheckpoint(checkpointPath));
+    delete checkpoint;
 
-  //  ASSERT_OK(db2->Get(ReadOptions(), Slice("key2"), &read_result));
-  //  ASSERT_EQ(std::string(big_value.get(), blob_size), read_result);
-  //  ASSERT_OK(db2->Get(ReadOptions(), Slice("key2"), &read_result));
+    ASSERT_OK(db->Close());
+    delete db;
+  }
 
-  PinnableSlice result_slice;
-  ASSERT_OK(db3->Get(ReadOptions(), db3->DefaultColumnFamily(), Slice("key2"),
-                     &result_slice));
-  ASSERT_EQ(Slice(big_value.get(), blob_size).ToString(), result_slice.ToString());
+  { // Open checkpoint as read only
+    DB* db = nullptr;
+    ASSERT_OK(rocksdb::DB::OpenForReadOnly(options, checkpointPath, &db, true));
+    PinnableSlice result_slice;
+    ASSERT_OK(db->Get(rocksdb::ReadOptions(), db->DefaultColumnFamily(), key,
+                       &result_slice));
+    result_slice.Reset();
+    db->Close();
+    delete db;
 
-  db3->Close();
-  delete db3;
+  }
 }
 }
 

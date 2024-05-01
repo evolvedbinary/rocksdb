@@ -1461,15 +1461,22 @@ jbyteArray Java_org_rocksdb_RocksDB_get__J_3BII(JNIEnv* env, jclass,
     ROCKSDB_NAMESPACE::JByteArraySlice key(env, jkey, jkey_off, jkey_len);
     ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
 
+    std::cout << "  Key for read : " << std::string(key.slice().data(), key.slice().size()) << "\n";
+
+    std::string result;
+
+    auto myReadResult = db->Get(ROCKSDB_NAMESPACE::ReadOptions(), key.slice(), &result);
+
+    printf("Status of custom read : %d\n", myReadResult.code());
+
     auto read_status = db->Get(ROCKSDB_NAMESPACE::ReadOptions(), db->DefaultColumnFamily(),
                                key.slice(), &value.pinnable_slice());
 
-    printf("  Read status: %d, enable_blob_files %d : min_blob_size: %lld\n",
-           read_status.code(),
+    printf("Status: %s enable_blob_files %d : min_blob_size: %lld\n",
+           read_status.ToString().c_str(),
            db->GetOptions().enable_blob_files,
            db->GetOptions().min_blob_size
            );
-    std::cout << "  Key for read : " << std::string(key.slice().data(), key.slice().size()) << "\n";
     std::cout.flush();
 
     ROCKSDB_NAMESPACE::KVException::ThrowOnError(

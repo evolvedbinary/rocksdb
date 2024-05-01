@@ -5,6 +5,8 @@
 
 #include "db/db_impl/compacted_db_impl.h"
 
+#include <iostream>
+
 #include "db/db_impl/db_impl.h"
 #include "db/version_set.h"
 #include "logging/logging.h"
@@ -36,6 +38,9 @@ size_t CompactedDBImpl::FindFile(const Slice& key) {
 Status CompactedDBImpl::Get(const ReadOptions& _read_options,
                             ColumnFamilyHandle*, const Slice& key,
                             PinnableSlice* value, std::string* timestamp) {
+
+  std::cout << "CompactedDBImpl::Get\n";
+
   if (_read_options.io_activity != Env::IOActivity::kUnknown &&
       _read_options.io_activity != Env::IOActivity::kGet) {
     return Status::InvalidArgument(

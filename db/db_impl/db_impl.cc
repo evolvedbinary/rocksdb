@@ -15,6 +15,7 @@
 
 #include <cinttypes>
 #include <cstdio>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <set>
@@ -2054,6 +2055,7 @@ Status DBImpl::GetImpl(const ReadOptions& read_options,
 Status DBImpl::Get(const ReadOptions& _read_options,
                    ColumnFamilyHandle* column_family, const Slice& key,
                    PinnableSlice* value, std::string* timestamp) {
+  std::cout << "Status DBImpl::Get\n";
   assert(value != nullptr);
   value->Reset();
 
