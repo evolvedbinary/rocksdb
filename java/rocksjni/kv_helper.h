@@ -206,6 +206,17 @@ class JByteArrayPinnableSlice {
     return pinnable_len;
   };
 
+  jint FetchCritical() {
+    const jint pinnable_len = static_cast<jint>(pinnable_slice_.size());
+    const jint result_len = std::min(jbuffer_len_, pinnable_len);
+    jboolean is_copy;
+    void *buffer = env_->GetPrimitiveArrayCritical(jbuffer_, &is_copy);
+    memcpy(buffer, pinnable_slice_.data(), result_len);
+    env_->ReleasePrimitiveArrayCritical(jbuffer_, buffer, JNI_ABORT);
+
+    return pinnable_len;
+  }
+
   /**
    * @brief create a new Java buffer and copy the result into it
    *

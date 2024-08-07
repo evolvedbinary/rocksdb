@@ -1886,6 +1886,10 @@ public class RocksDB extends RocksObject {
     return get(nativeHandle_, key, 0, key.length, value, 0, value.length);
   }
 
+  public int getCritical(final byte[] key, final byte[] value) throws RocksDBException {
+    return getCritical(nativeHandle_, key, 0, key.length, value, 0, value.length);
+  }
+
   /**
    * Get the value associated with the specified key within column family*
    *
@@ -1911,11 +1915,19 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final byte[] key, final int offset, final int len,
-      final byte[] value, final int vOffset, final int vLen)
+                 final byte[] value, final int vOffset, final int vLen)
       throws RocksDBException {
     CheckBounds(offset, len, key.length);
     CheckBounds(vOffset, vLen, value.length);
     return get(nativeHandle_, key, offset, len, value, vOffset, vLen);
+  }
+
+  public int getCritical(final byte[] key, final int offset, final int len,
+                 final byte[] value, final int vOffset, final int vLen)
+      throws RocksDBException {
+    CheckBounds(offset, len, key.length);
+    CheckBounds(vOffset, vLen, value.length);
+    return getCritical(nativeHandle_, key, offset, len, value, vOffset, vLen);
   }
 
   /**
@@ -1936,8 +1948,14 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ColumnFamilyHandle columnFamilyHandle, final byte[] key,
-      final byte[] value) throws RocksDBException, IllegalArgumentException {
+                 final byte[] value) throws RocksDBException, IllegalArgumentException {
     return get(nativeHandle_, key, 0, key.length, value, 0, value.length,
+        columnFamilyHandle.nativeHandle_);
+  }
+
+  public int getCritical(final ColumnFamilyHandle columnFamilyHandle, final byte[] key,
+                 final byte[] value) throws RocksDBException, IllegalArgumentException {
+    return getCritical(nativeHandle_, key, 0, key.length, value, 0, value.length,
         columnFamilyHandle.nativeHandle_);
   }
 
@@ -1968,11 +1986,20 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ColumnFamilyHandle columnFamilyHandle, final byte[] key,
-      final int offset, final int len, final byte[] value, final int vOffset,
-      final int vLen) throws RocksDBException, IllegalArgumentException {
+                 final int offset, final int len, final byte[] value, final int vOffset,
+                 final int vLen) throws RocksDBException, IllegalArgumentException {
     CheckBounds(offset, len, key.length);
     CheckBounds(vOffset, vLen, value.length);
     return get(nativeHandle_, key, offset, len, value, vOffset, vLen,
+        columnFamilyHandle.nativeHandle_);
+  }
+
+  public int getCritical(final ColumnFamilyHandle columnFamilyHandle, final byte[] key,
+                 final int offset, final int len, final byte[] value, final int vOffset,
+                 final int vLen) throws RocksDBException, IllegalArgumentException {
+    CheckBounds(offset, len, key.length);
+    CheckBounds(vOffset, vLen, value.length);
+    return getCritical(nativeHandle_, key, offset, len, value, vOffset, vLen,
         columnFamilyHandle.nativeHandle_);
   }
 
@@ -1993,9 +2020,15 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ReadOptions opt, final byte[] key,
-      final byte[] value) throws RocksDBException {
+                 final byte[] value) throws RocksDBException {
     return get(nativeHandle_, opt.nativeHandle_,
-               key, 0, key.length, value, 0, value.length);
+        key, 0, key.length, value, 0, value.length);
+  }
+
+  public int getCritical(final ReadOptions opt, final byte[] key,
+                 final byte[] value) throws RocksDBException {
+    return getCritical(nativeHandle_, opt.nativeHandle_,
+        key, 0, key.length, value, 0, value.length);
   }
 
   /**
@@ -2023,11 +2056,20 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ReadOptions opt, final byte[] key, final int offset,
-      final int len, final byte[] value, final int vOffset, final int vLen)
+                 final int len, final byte[] value, final int vOffset, final int vLen)
       throws RocksDBException {
     CheckBounds(offset, len, key.length);
     CheckBounds(vOffset, vLen, value.length);
     return get(nativeHandle_, opt.nativeHandle_,
+        key, offset, len, value, vOffset, vLen);
+  }
+
+  public int getCritical(final ReadOptions opt, final byte[] key, final int offset,
+                 final int len, final byte[] value, final int vOffset, final int vLen)
+      throws RocksDBException {
+    CheckBounds(offset, len, key.length);
+    CheckBounds(vOffset, vLen, value.length);
+    return getCritical(nativeHandle_, opt.nativeHandle_,
         key, offset, len, value, vOffset, vLen);
   }
 
@@ -2050,9 +2092,16 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ColumnFamilyHandle columnFamilyHandle,
-      final ReadOptions opt, final byte[] key, final byte[] value)
+                 final ReadOptions opt, final byte[] key, final byte[] value)
       throws RocksDBException {
     return get(nativeHandle_, opt.nativeHandle_, key, 0, key.length, value,
+        0, value.length, columnFamilyHandle.nativeHandle_);
+  }
+
+  public int getCritical(final ColumnFamilyHandle columnFamilyHandle,
+                 final ReadOptions opt, final byte[] key, final byte[] value)
+      throws RocksDBException {
+    return getCritical(nativeHandle_, opt.nativeHandle_, key, 0, key.length, value,
         0, value.length, columnFamilyHandle.nativeHandle_);
   }
 
@@ -2083,12 +2132,22 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public int get(final ColumnFamilyHandle columnFamilyHandle,
-      final ReadOptions opt, final byte[] key, final int offset, final int len,
-      final byte[] value, final int vOffset, final int vLen)
+                 final ReadOptions opt, final byte[] key, final int offset, final int len,
+                 final byte[] value, final int vOffset, final int vLen)
       throws RocksDBException {
     CheckBounds(offset, len, key.length);
     CheckBounds(vOffset, vLen, value.length);
     return get(nativeHandle_, opt.nativeHandle_, key, offset, len, value,
+        vOffset, vLen, columnFamilyHandle.nativeHandle_);
+  }
+
+  public int getCritical(final ColumnFamilyHandle columnFamilyHandle,
+                 final ReadOptions opt, final byte[] key, final int offset, final int len,
+                 final byte[] value, final int vOffset, final int vLen)
+      throws RocksDBException {
+    CheckBounds(offset, len, key.length);
+    CheckBounds(vOffset, vLen, value.length);
+    return getCritical(nativeHandle_, opt.nativeHandle_, key, offset, len, value,
         vOffset, vLen, columnFamilyHandle.nativeHandle_);
   }
 
@@ -4933,18 +4992,32 @@ public class RocksDB extends RocksObject {
       final long handle, final long writeOptHandle, final long wbHandle) throws RocksDBException;
   private static native void write1(
       final long handle, final long writeOptHandle, final long wbwiHandle) throws RocksDBException;
+
   private static native int get(final long handle, final byte[] key, final int keyOffset,
-      final int keyLength, final byte[] value, final int valueOffset, final int valueLength)
+                                final int keyLength, final byte[] value, final int valueOffset, final int valueLength)
       throws RocksDBException;
   private static native int get(final long handle, final byte[] key, final int keyOffset,
-      final int keyLength, byte[] value, final int valueOffset, final int valueLength,
-      final long cfHandle) throws RocksDBException;
+                                final int keyLength, byte[] value, final int valueOffset, final int valueLength,
+                                final long cfHandle) throws RocksDBException;
   private static native int get(final long handle, final long readOptHandle, final byte[] key,
-      final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
-      final int valueLength) throws RocksDBException;
+                                final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
+                                final int valueLength) throws RocksDBException;
   private static native int get(final long handle, final long readOptHandle, final byte[] key,
-      final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
-      final int valueLength, final long cfHandle) throws RocksDBException;
+                                final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
+                                final int valueLength, final long cfHandle) throws RocksDBException;
+  private static native int getCritical(final long handle, final byte[] key, final int keyOffset,
+                                final int keyLength, final byte[] value, final int valueOffset, final int valueLength)
+      throws RocksDBException;
+  private static native int getCritical(final long handle, final byte[] key, final int keyOffset,
+                                final int keyLength, byte[] value, final int valueOffset, final int valueLength,
+                                final long cfHandle) throws RocksDBException;
+  private static native int getCritical(final long handle, final long readOptHandle, final byte[] key,
+                                final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
+                                final int valueLength) throws RocksDBException;
+  private static native int getCritical(final long handle, final long readOptHandle, final byte[] key,
+                                final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
+                                final int valueLength, final long cfHandle) throws RocksDBException;
+
   private static native byte[] get(final long handle, byte[] key, final int keyOffset,
       final int keyLength) throws RocksDBException;
   private static native byte[] get(final long handle, final byte[] key, final int keyOffset,

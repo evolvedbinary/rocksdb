@@ -25,7 +25,7 @@ import org.rocksdb.*;
 import org.rocksdb.util.FileUtils;
 
 @State(Scope.Thread)
-public class MultiGetBenchmarks {
+public class GetMultiBenchmarks {
   @Param({
       "no_column_family",
       "1_column_family",
@@ -262,7 +262,7 @@ public class MultiGetBenchmarks {
   public static void main(final String[] args) throws RunnerException {
     final org.openjdk.jmh.runner.options.Options opt =
         new OptionsBuilder()
-            .include(MultiGetBenchmarks.class.getSimpleName())
+            .include(GetMultiBenchmarks.class.getSimpleName())
             .forks(1)
             .jvmArgs("-ea")
             .warmupIterations(1)

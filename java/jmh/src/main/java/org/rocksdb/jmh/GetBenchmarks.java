@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.openjdk.jmh.annotations.*;
 import org.rocksdb.*;
@@ -44,11 +45,75 @@ public class GetBenchmarks {
   private AtomicInteger cfHandlesIdx;
   ColumnFamilyHandle[] cfHandles;
   RocksDB db;
-  private final AtomicInteger keyIndex = new AtomicInteger();
-  private ByteBuffer keyBuf;
-  private ByteBuffer valueBuf;
-  private byte[] keyArr;
-  private byte[] valueArr;
+
+  @State(Scope.Thread)
+  public static class ThreadBuffers {
+    private ByteBuffer keyBuf;
+    private ByteBuffer valueBuf;
+    private byte[] keyArr;
+    private byte[] valueArr;
+
+    private Random random = new Random();
+    private int keyIndex = 0;
+
+    @Param({"12", "64", "128"}) int keySize;
+    @Param({"64", "1024", "65536"}) int valueSize;
+    @Param({"1000", "100000"}) int keyCount;
+
+    @Setup(Level.Trial) public void setup() {
+      keyArr = new byte[keySize];
+      valueArr = new byte[valueSize];
+      keyBuf = ByteBuffer.allocateDirect(keySize);
+      valueBuf = ByteBuffer.allocateDirect(valueSize);
+      Arrays.fill(keyArr, (byte) 0x30);
+      Arrays.fill(valueArr, (byte) 0x30);
+      keyBuf.put(keyArr);
+      keyBuf.flip();
+      valueBuf.put(valueArr);
+      valueBuf.flip();  
+    }
+
+    private int nextKeyRandom() {
+      return random.nextInt() % keyCount;
+    }
+
+    private int nextKey() {
+      int result = keyIndex;
+      keyIndex = (keyIndex + 1) % keyCount;
+      return result;
+    }
+
+    private byte[] getKeyArr(final int keyIdx) {
+      final int MAX_LEN = 9; // key100000
+      final byte[] keyPrefix = ba("key" + keyIdx);
+      System.arraycopy(keyPrefix, 0, keyArr, 0, keyPrefix.length);
+      Arrays.fill(keyArr, keyPrefix.length, MAX_LEN, (byte) 0x30);
+      return keyArr;
+    }
+
+    private byte[] getValueArr() {
+      return valueArr;
+    }  
+
+    private ByteBuffer getKeyBuf(final int keyIdx) {
+      final int MAX_LEN = 9; // key100000
+      final String keyStr = "key" + keyIdx;
+      for (int i = 0; i < keyStr.length(); ++i) {
+        keyBuf.put(i, (byte) keyStr.charAt(i));
+      }
+      for (int i = keyStr.length(); i < MAX_LEN; ++i) {
+        keyBuf.put(i, (byte) 0x30);
+      }
+      // Reset position for future reading
+      keyBuf.position(0);
+      return keyBuf;
+    }
+  
+    private ByteBuffer getValueBuf() {
+      return valueBuf;
+    }
+   
+  }
 
   @Setup(Level.Trial)
   public void setup() throws IOException, RocksDBException {
@@ -84,8 +149,8 @@ public class GetBenchmarks {
     cfHandles = cfHandlesList.toArray(new ColumnFamilyHandle[0]);
 
     // store initial data for retrieving via get
-    keyArr = new byte[keySize];
-    valueArr = new byte[valueSize];
+    byte[] keyArr = new byte[keySize];
+    byte[] valueArr = new byte[valueSize];
     Arrays.fill(keyArr, (byte) 0x30);
     Arrays.fill(valueArr, (byte) 0x30);
     for (int i = 0; i <= cfs; i++) {
@@ -102,8 +167,8 @@ public class GetBenchmarks {
       db.flush(flushOptions);
     }
 
-    keyBuf = ByteBuffer.allocateDirect(keySize);
-    valueBuf = ByteBuffer.allocateDirect(valueSize);
+    ByteBuffer keyBuf = ByteBuffer.allocateDirect(keySize);
+    ByteBuffer valueBuf = ByteBuffer.allocateDirect(valueSize);
     Arrays.fill(keyArr, (byte) 0x30);
     Arrays.fill(valueArr, (byte) 0x30);
     keyBuf.put(keyArr);
@@ -138,78 +203,44 @@ public class GetBenchmarks {
     }
   }
 
-  /**
-   * Takes the next position in the index.
-   */
-  private int next() {
-    int idx;
-    int nextIdx;
-    while (true) {
-      idx = keyIndex.get();
-      nextIdx = idx + 1;
-      if (nextIdx >= keyCount) {
-        nextIdx = 0;
-      }
-
-      if (keyIndex.compareAndSet(idx, nextIdx)) {
-        break;
-      }
-    }
-    return idx;
-  }
-
-  // String -> byte[]
-  private byte[] getKeyArr() {
-    final int MAX_LEN = 9; // key100000
-    final int keyIdx = next();
-    final byte[] keyPrefix = ba("key" + keyIdx);
-    System.arraycopy(keyPrefix, 0, keyArr, 0, keyPrefix.length);
-    Arrays.fill(keyArr, keyPrefix.length, MAX_LEN, (byte) 0x30);
-    return keyArr;
-  }
-
-  // String -> ByteBuffer
-  private ByteBuffer getKeyBuf() {
-    final int MAX_LEN = 9; // key100000
-    final int keyIdx = next();
-    final String keyStr = "key" + keyIdx;
-    for (int i = 0; i < keyStr.length(); ++i) {
-      keyBuf.put(i, (byte) keyStr.charAt(i));
-    }
-    for (int i = keyStr.length(); i < MAX_LEN; ++i) {
-      keyBuf.put(i, (byte) 0x30);
-    }
-    // Reset position for future reading
-    keyBuf.position(0);
-    return keyBuf;
-  }
-
-  private byte[] getValueArr() {
-    return valueArr;
-  }
-
-  private ByteBuffer getValueBuf() {
-    return valueBuf;
+  @Benchmark
+  public void get(ThreadBuffers buffers) throws RocksDBException {
+    db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKey()));
   }
 
   @Benchmark
-  public void get() throws RocksDBException {
-    db.get(getColumnFamily(), getKeyArr());
+  public void getRandom(ThreadBuffers buffers) throws RocksDBException {
+    db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKeyRandom()));
   }
 
   @Benchmark
-  public void preallocatedGet() throws RocksDBException {
-    db.get(getColumnFamily(), getKeyArr(), getValueArr());
+  public void preallocatedGet(ThreadBuffers buffers) throws RocksDBException {
+    db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), buffers.getValueArr());
   }
 
   @Benchmark
-  public void preallocatedByteBufferGet() throws RocksDBException {
-    int res = db.get(getColumnFamily(), readOptions, getKeyBuf(), getValueBuf());
-    // For testing correctness:
-    //    assert res > 0;
-    //    final byte[] ret = new byte[valueSize];
-    //    valueBuf.get(ret);
-    //    System.out.println(str(ret));
-    //    valueBuf.flip();
+  public void preallocatedGetCritical(ThreadBuffers buffers) throws RocksDBException {
+    db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), buffers.getValueArr());
   }
+
+  @Benchmark
+  public void preallocatedGetRandom(ThreadBuffers buffers) throws RocksDBException {
+    db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), buffers.getValueArr());
+  }
+
+  @Benchmark
+  public void preallocatedGetRandomCritical(ThreadBuffers buffers) throws RocksDBException {
+    db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), buffers.getValueArr());
+  }
+
+  @Benchmark
+  public void preallocatedByteBufferGet(ThreadBuffers buffers) throws RocksDBException {
+    int res = db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(buffers.nextKey()), buffers.getValueBuf());
+  }
+
+  @Benchmark
+  public void preallocatedByteBufferGetRandom(ThreadBuffers buffers) throws RocksDBException {
+    int res = db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(buffers.nextKeyRandom()), buffers.getValueBuf());
+  }
+
 }
