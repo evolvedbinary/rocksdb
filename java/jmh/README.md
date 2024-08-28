@@ -48,3 +48,21 @@ PutBenchmarks.putByteBuffers                           16        no_column_famil
 PutBenchmarks.putByteBuffers                           16        no_column_family        1000        128        65536  thrpt   25    7792.304 ±  1447.510  ops/s
 PutBenchmarks.putByteBuffers                           16        no_column_family      100000        128         4096  thrpt   25   92017.278 ±  1357.971  ops/s
 PutBenchmarks.putByteBuffers                           16        no_column_family      100000        128        65536  thrpt   25    8006.399 ±  1579.384  ops/s
+
+Adding `critical` method implementation, after refactor to threaded jmh tests,
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocatedGet GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256
+```
+
+Benchmark                                    (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt       Score      Error  Units
+GetBenchmarks.preallocatedGet                      no_column_family        1000        128        65536  thrpt   25   90407.832 ± 1420.685  ops/s
+GetBenchmarks.preallocatedGetCritical              no_column_family        1000        128        65536  thrpt   25   92791.082 ± 1956.233  ops/s
+GetBenchmarks.preallocatedGetRandom                no_column_family        1000        128        65536  thrpt   25  175417.241 ± 4264.823  ops/s
+GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  156321.417 ± 1621.874  ops/s
+
+Now try multi threaded (as above, but -t 8)
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocatedGet GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256 -t 8
+```
