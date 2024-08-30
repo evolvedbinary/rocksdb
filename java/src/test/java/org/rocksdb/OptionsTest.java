@@ -1007,6 +1007,13 @@ public class OptionsTest {
   }
 
   @Test
+  public void disableExtraChecks() {
+    try (final Options options = new Options()) {
+      options.disableExtraChecks();
+    }
+  }
+
+  @Test
   public void compressionTypes() {
     try (final Options options = new Options()) {
       for (final CompressionType compressionType :

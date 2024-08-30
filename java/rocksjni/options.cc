@@ -3267,6 +3267,16 @@ void Java_org_rocksdb_Options_optimizeUniversalStyleCompaction(
 
 /*
  * Class:     org_rocksdb_Options
+ * Method:    disableExtraChecks
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_rocksdb_Options_disableExtraChecks
+  (JNIEnv *, jclass, jlong jhandle) {
+  reinterpret_cast<ROCKSDB_NAMESPACE::Options*>(jhandle)->DisableExtraChecks();
+}
+
+/*
+ * Class:     org_rocksdb_Options
  * Method:    prepareForBulkLoad
  * Signature: (J)V
  */

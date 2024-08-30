@@ -209,6 +209,11 @@ public class Options extends RocksObject
     return this;
   }
 
+  public Options disableExtraChecks() {
+    disableExtraChecks(nativeHandle_);
+    return this;
+  }
+
   @Override
   public Options setComparator(final BuiltinComparator builtinComparator) {
     assert(isOwningHandle());
@@ -2334,6 +2339,7 @@ public class Options extends RocksObject
   private static native void optimizeLevelStyleCompaction(long handle, long memtableMemoryBudget);
   private static native void optimizeUniversalStyleCompaction(
       long handle, long memtableMemoryBudget);
+  private static native void disableExtraChecks(final long handle);
   private static native void setComparatorHandle(long handle, int builtinComparator);
   private static native void setComparatorHandle(
       long optHandle, long comparatorHandle, byte comparatorType);
