@@ -210,8 +210,11 @@ class JByteArrayPinnableSlice {
     const jint pinnable_len = static_cast<jint>(pinnable_slice_.size());
     const jint result_len = std::min(jbuffer_len_, pinnable_len);
     jboolean is_copy;
-    void *buffer = env_->GetPrimitiveArrayCritical(jbuffer_, &is_copy);
-    memcpy(buffer, pinnable_slice_.data(), result_len);
+    char *buffer = reinterpret_cast<char *>(env_->GetPrimitiveArrayCritical(jbuffer_, &is_copy));
+    if (is_copy == JNI_TRUE) {
+      KVException::ThrowNew(env_, "Extra copy, Critical() method is entirely moot");
+    }
+    memcpy(buffer + jbuffer_off_, pinnable_slice_.data(), result_len);
     env_->ReleasePrimitiveArrayCritical(jbuffer_, buffer, JNI_ABORT);
 
     return pinnable_len;

@@ -62,7 +62,16 @@ GetBenchmarks.preallocatedGetRandom                no_column_family        1000 
 GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  156321.417 ± 1621.874  ops/s
 
 Now try multi threaded (as above, but -t 8)
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocated GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256 -t 8
+```
 
-```
-java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocatedGet GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256 -t 8
-```
+Benchmark                                      (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt       Score       Error  Units
+GetBenchmarks.preallocatedByteBufferGet              no_column_family        1000        128        65536  thrpt   25  318943.016 ±  4407.365  ops/s
+GetBenchmarks.preallocatedByteBufferGetRandom        no_column_family        1000        128        65536  thrpt   25  608072.892 ± 13152.582  ops/s
+GetBenchmarks.preallocatedGet                        no_column_family        1000        128        65536  thrpt   25  319422.862 ±  3693.119  ops/s
+GetBenchmarks.preallocatedGetCritical                no_column_family        1000        128        65536  thrpt   25  318453.877 ±  2519.218  ops/s
+GetBenchmarks.preallocatedGetRandom                  no_column_family        1000        128        65536  thrpt   25  612645.818 ±  6203.882  ops/s
+GetBenchmarks.preallocatedGetRandomCritical          no_column_family        1000        128        65536  thrpt   25  606301.335 ±  5731.483  ops/s
+
+Looks like minimal differences..
