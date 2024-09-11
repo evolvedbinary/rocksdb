@@ -175,26 +175,19 @@ public class GetMultiBenchmarks {
     }
   }
 
-  ByteBuffer keysBuffer;
-  ByteBuffer valuesBuffer;
-
   List<ByteBuffer> valueBuffersList;
   List<ByteBuffer> keyBuffersList;
 
   @Setup
-  public void allocateSliceBuffers() {
-    keysBuffer = ByteBuffer.allocateDirect(keyCount * keySize);
-    valuesBuffer = ByteBuffer.allocateDirect(keyCount * valueSize);
-    valueBuffersList = new ArrayList<>();
-    keyBuffersList = new ArrayList<>();
+  public void allocateBuffers() {
     for (int i = 0; i < keyCount; i++) {
-      valueBuffersList.add(valuesBuffer.slice(i * valueSize, valueSize));
-      keyBuffersList.add(keysBuffer.slice(i * keySize, keySize));
+      valueBuffersList.add(ByteBuffer.allocateDirect(valueSize));
+      keyBuffersList.add(ByteBuffer.allocateDirect(keySize));
     }
   }
 
   @TearDown
-  public void freeSliceBuffers() {
+  public void freeBuffers() {
     valueBuffersList.clear();
   }
 
