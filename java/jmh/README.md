@@ -75,3 +75,22 @@ GetBenchmarks.preallocatedGetRandom                  no_column_family        100
 GetBenchmarks.preallocatedGetRandomCritical          no_column_family        1000        128        65536  thrpt   25  606301.335 ±  5731.483  ops/s
 
 Looks like minimal differences..
+
+Try on ubuntu box; had to build without jemalloc as it was crapping out.
+```
+DISABLE_JEMALLOC=1 make -j4
+DISABLE_JEMALLOC=1 make -j4 rocksdbjava
+```
+...
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocatedGet GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256
+```
+
+Benchmark                                    (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score     Error  Units
+GetBenchmarks.preallocatedGet                      no_column_family        1000        128        65536  thrpt   25  26371.815 ± 283.231  ops/s
+GetBenchmarks.preallocatedGetCritical              no_column_family        1000        128        65536  thrpt   25  26446.532 ± 266.897  ops/s
+GetBenchmarks.preallocatedGetRandom                no_column_family        1000        128        65536  thrpt   25  60889.568 ± 371.162  ops/s
+GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  60006.909 ± 542.036  ops/s
+
+Multithreaded:
+
