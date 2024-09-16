@@ -76,7 +76,23 @@ GetBenchmarks.preallocatedGetRandomCritical          no_column_family        100
 
 Looks like minimal differences..
 
-Try on ubuntu box; had to build without jemalloc as it was crapping out.
+Try on ubuntu box; had to build without jemalloc as it was crapping out. From `lscpu`
+```
+Vendor ID:                          GenuineIntel
+CPU family:                         6
+Model:                              6
+Model name:                         QEMU Virtual CPU version 2.5+
+Stepping:                           3
+CPU MHz:                            3491.912
+BogoMIPS:                           6983.82
+Hypervisor vendor:                  KVM
+Virtualization type:                full
+L1d cache:                          128 KiB
+L1i cache:                          128 KiB
+L2 cache:                           16 MiB
+L3 cache:                           64 MiB
+```
+Do this:
 ```
 DISABLE_JEMALLOC=1 make -j4
 DISABLE_JEMALLOC=1 make -j4 rocksdbjava
@@ -93,4 +109,15 @@ GetBenchmarks.preallocatedGetRandom                no_column_family        1000 
 GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  60006.909 ± 542.036  ops/s
 
 Multithreaded:
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocatedGet GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256 -t 4
+```
+
+Benchmark                                    (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt       Score      Error  Units
+GetBenchmarks.preallocatedGet                      no_column_family        1000        128        65536  thrpt   25  118521.898 ±  814.669  ops/s
+GetBenchmarks.preallocatedGetCritical              no_column_family        1000        128        65536  thrpt   25  118564.242 ± 1110.357  ops/s
+GetBenchmarks.preallocatedGetRandom                no_column_family        1000        128        65536  thrpt   25  196274.073 ± 4162.104  ops/s
+GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  194944.334 ± 5256.324  ops/s
+
 
