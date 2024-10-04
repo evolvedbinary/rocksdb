@@ -122,6 +122,31 @@ class JByteArraySlice {
   Slice slice_;
 };
 
+class JByteArrayCriticalSlice {
+ public:
+  JByteArrayCriticalSlice(JNIEnv* env, const jbyteArray& jarr, const jint jarr_off,
+                  const jint jarr_len)
+      : arr_(static_cast<jbyte*>(env->GetPrimitiveArrayCritical(jarr, 0))),
+        slice_(reinterpret_cast<char*>(arr_ + jarr_off), jarr_len) {
+    KVException::ThrowOnError(env);
+    if (arr_ == nullptr) {
+      auto message = "Failed to GetPrimitiveArrayCritical of " + std::to_string(reinterpret_cast<long>(&jarr)) +
+                     " + length " + std::to_string(jarr_len);
+      KVException::ThrowNew(env, message);
+    }
+  };
+
+  ~JByteArrayCriticalSlice() {
+    slice_.clear();
+  };
+
+  Slice& slice() { return slice_; }
+
+ private:
+  jbyte* arr_;
+  Slice slice_;
+};
+
 /**
  * @brief Construct a slice with the contents of a direct Java ByterBuffer
  *

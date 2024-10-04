@@ -200,6 +200,22 @@ public class PutBenchmarks {
   }
 
   @Benchmark
+  public void putCriticalByteArrays(final Counter counter) throws RocksDBException {
+    byte[] keyBuf = borrow(keyBuffers);
+    byte[] valueBuf = borrow(valueBuffers);
+
+    final int i = counter.next();
+    final byte[] keyPrefix = ba("key" + i);
+    final byte[] valuePrefix = ba("value" + i);
+    System.arraycopy(keyPrefix, 0, keyBuf, 0, keyPrefix.length);
+    System.arraycopy(valuePrefix, 0, valueBuf, 0, valuePrefix.length);
+    db.putCritical(getColumnFamily(), new WriteOptions(), keyBuf, valueBuf);
+
+    repay(keyBuffers, keyBuf);
+    repay(valueBuffers, valueBuf);
+  }
+
+  @Benchmark
   public void putByteBuffers(final Counter counter) throws RocksDBException {
     ByteBuffer keyBuf = borrow(keyBuffersBB);
     keyBuf.clear();
