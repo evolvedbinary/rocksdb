@@ -894,6 +894,20 @@ public class RocksDB extends RocksObject {
   /**
    * Set the database entry for "key" to "value".
    *
+   * @param key the specified key to be inserted.
+   * @param value the value associated with the specified key.
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
+  public void putCritical(final byte[] key, final byte[] value)
+      throws RocksDBException {
+    putCritical(nativeHandle_, key, 0, key.length, value, 0, value.length);
+  }
+
+  /**
+   * Set the database entry for "key" to "value".
+   *
    * @param key The specified key to be inserted
    * @param offset the offset of the "key" array to be used, must be
    *    non-negative and no larger than "key".length
@@ -931,8 +945,28 @@ public class RocksDB extends RocksObject {
    * @throws RocksDBException thrown if error happens in underlying
    *    native library.
    */
+  public void putCritical(final ColumnFamilyHandle columnFamilyHandle,
+                  final byte[] key, final byte[] value) throws RocksDBException {
+    putCritical(nativeHandle_, key, 0, key.length, value, 0, value.length,
+        columnFamilyHandle.nativeHandle_);
+  }
+
+  /**
+   * Set the database entry for "key" to "value" in the specified
+   * column family.
+   *
+   * @param columnFamilyHandle {@link org.rocksdb.ColumnFamilyHandle}
+   *     instance
+   * @param key the specified key to be inserted.
+   * @param value the value associated with the specified key.
+   * <p>
+   * throws IllegalArgumentException if column family is not present
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
   public void put(final ColumnFamilyHandle columnFamilyHandle,
-      final byte[] key, final byte[] value) throws RocksDBException {
+                  final byte[] key, final byte[] value) throws RocksDBException {
     put(nativeHandle_, key, 0, key.length, value, 0, value.length,
         columnFamilyHandle.nativeHandle_);
   }
@@ -4952,14 +4986,25 @@ public class RocksDB extends RocksObject {
   private static native void dropColumnFamilies(final long handle, final long[] cfHandles)
       throws RocksDBException;
   private static native void put(final long handle, final byte[] key, final int keyOffset,
-      final int keyLength, final byte[] value, final int valueOffset, int valueLength)
+                                 final int keyLength, final byte[] value, final int valueOffset, int valueLength)
+      throws RocksDBException;
+  private static native void putCritical(final long handle, final byte[] key, final int keyOffset,
+                                 final int keyLength, final byte[] value, final int valueOffset, int valueLength)
       throws RocksDBException;
   private static native void put(final long handle, final byte[] key, final int keyOffset,
-      final int keyLength, final byte[] value, final int valueOffset, final int valueLength,
-      final long cfHandle) throws RocksDBException;
+                                 final int keyLength, final byte[] value, final int valueOffset, final int valueLength,
+                                 final long cfHandle) throws RocksDBException;
+  private static native void putCritical(final long handle, final byte[] key, final int keyOffset,
+                                 final int keyLength, final byte[] value, final int valueOffset, final int valueLength,
+                                 final long cfHandle) throws RocksDBException;
   private static native void put(final long handle, final long writeOptHandle, final byte[] key,
       final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
       final int valueLength) throws RocksDBException;
+
+  private static native void putCritical(final long handle, final long writeOptHandle, final byte[] key,
+                                         final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
+                                         final int valueLength) throws RocksDBException;
+
   private static native void put(final long handle, final long writeOptHandle, final byte[] key,
                                  final int keyOffset, final int keyLength, final byte[] value, final int valueOffset,
                                  final int valueLength, final long cfHandle) throws RocksDBException;

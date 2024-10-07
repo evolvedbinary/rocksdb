@@ -628,6 +628,29 @@ void Java_org_rocksdb_RocksDB_put__J_3BII_3BII(JNIEnv* env, jclass,
 
 /*
  * Class:     org_rocksdb_RocksDB
+ * Method:    putCritical
+ * Signature: (J[BII[BII)V
+ */
+void Java_org_rocksdb_RocksDB_putCritical__J_3BII_3BII(JNIEnv* env, jclass,
+                                               jlong jdb_handle,
+                                               jbyteArray jkey, jint jkey_off,
+                                               jint jkey_len, jbyteArray jval,
+                                               jint jval_off, jint jval_len) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+  static const ROCKSDB_NAMESPACE::WriteOptions default_write_options =
+      ROCKSDB_NAMESPACE::WriteOptions();
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice value(env, jval, jval_off, jval_len);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env, db->Put(default_write_options, key.slice(), value.slice()));
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
  * Method:    put
  * Signature: (J[BII[BIIJ)V
  */
@@ -662,6 +685,40 @@ void Java_org_rocksdb_RocksDB_put__J_3BII_3BIIJ(JNIEnv* env, jclass,
 
 /*
  * Class:     org_rocksdb_RocksDB
+ * Method:    putCritical
+ * Signature: (J[BII[BIIJ)V
+ */
+void Java_org_rocksdb_RocksDB_putCritical__J_3BII_3BIIJ(JNIEnv* env, jclass,
+                                                jlong jdb_handle,
+                                                jbyteArray jkey, jint jkey_off,
+                                                jint jkey_len, jbyteArray jval,
+                                                jint jval_off, jint jval_len,
+                                                jlong jcf_handle) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+  static const ROCKSDB_NAMESPACE::WriteOptions default_write_options =
+      ROCKSDB_NAMESPACE::WriteOptions();
+  auto* cf_handle =
+      reinterpret_cast<ROCKSDB_NAMESPACE::ColumnFamilyHandle*>(jcf_handle);
+  if (cf_handle == nullptr) {
+    ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(
+        env, ROCKSDB_NAMESPACE::Status::InvalidArgument(
+                 "Invalid ColumnFamilyHandle."));
+    return;
+  }
+
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice value(env, jval, jval_off, jval_len);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env,
+        db->Put(default_write_options, cf_handle, key.slice(), value.slice()));
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
  * Method:    put
  * Signature: (JJ[BII[BII)V
  */
@@ -678,6 +735,31 @@ void Java_org_rocksdb_RocksDB_put__JJ_3BII_3BII(JNIEnv* env, jclass,
   try {
     ROCKSDB_NAMESPACE::JByteArraySlice key(env, jkey, jkey_off, jkey_len);
     ROCKSDB_NAMESPACE::JByteArraySlice value(env, jval, jval_off, jval_len);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env, db->Put(*write_options, key.slice(), value.slice()));
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
+ * Method:    putCritical
+ * Signature: (JJ[BII[BII)V
+ */
+void Java_org_rocksdb_RocksDB_putCritical__JJ_3BII_3BII(JNIEnv* env, jclass,
+                                                jlong jdb_handle,
+                                                jlong jwrite_options_handle,
+                                                jbyteArray jkey, jint jkey_off,
+                                                jint jkey_len, jbyteArray jval,
+                                                jint jval_off, jint jval_len) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+  auto* write_options =
+      reinterpret_cast<ROCKSDB_NAMESPACE::WriteOptions*>(jwrite_options_handle);
+
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice value(env, jval, jval_off, jval_len);
     ROCKSDB_NAMESPACE::KVException::ThrowOnError(
         env, db->Put(*write_options, key.slice(), value.slice()));
   } catch (ROCKSDB_NAMESPACE::KVException&) {
@@ -717,7 +799,7 @@ void Java_org_rocksdb_RocksDB_put__JJ_3BII_3BIIJ(
 
 /*
  * Class:     org_rocksdb_RocksDB
- * Method:    put
+ * Method:    putCritical
  * Signature: (JJ[BII[BIIJ)V
  */
 void Java_org_rocksdb_RocksDB_putCritical__JJ_3BII_3BIIJ(
