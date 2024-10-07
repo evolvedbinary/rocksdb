@@ -126,7 +126,9 @@ class JByteArrayCriticalSlice {
  public:
   JByteArrayCriticalSlice(JNIEnv* env, const jbyteArray& jarr, const jint jarr_off,
                   const jint jarr_len)
-      : arr_(static_cast<jbyte*>(env->GetPrimitiveArrayCritical(jarr, 0))),
+      : env_(env),
+        jarr_(jarr),
+        arr_(static_cast<jbyte*>(env->GetPrimitiveArrayCritical(jarr, 0))),
         slice_(reinterpret_cast<char*>(arr_ + jarr_off), jarr_len) {
     KVException::ThrowOnError(env);
     if (arr_ == nullptr) {
@@ -138,11 +140,14 @@ class JByteArrayCriticalSlice {
 
   ~JByteArrayCriticalSlice() {
     slice_.clear();
+    env_->ReleasePrimitiveArrayCritical(jarr_, arr_, 0);
   };
 
   Slice& slice() { return slice_; }
 
  private:
+  JNIEnv* env_;
+  jbyteArray jarr_;
   jbyte* arr_;
   Slice slice_;
 };
