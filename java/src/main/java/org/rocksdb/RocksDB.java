@@ -1943,6 +1943,22 @@ public class RocksDB extends RocksObject {
     return get(nativeHandle_, key, 0, key.length, value, 0, value.length);
   }
 
+  /**
+   * Get the value associated with the specified key within column family*
+   *
+   * @param key the key to retrieve the value.
+   * @param value the out-value to receive the retrieved value.
+   *
+   * @return The size of the actual value that matches the specified
+   *     {@code key} in byte.  If the return value is greater than the
+   *     length of {@code value}, then it indicates that the size of the
+   *     input buffer {@code value} is insufficient and partial result will
+   *     be returned.  RocksDB.NOT_FOUND will be returned if the value not
+   *     found.
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
   public int getCritical(final byte[] key, final byte[] value) throws RocksDBException {
     return getCritical(nativeHandle_, key, 0, key.length, value, 0, value.length);
   }
@@ -1977,14 +1993,6 @@ public class RocksDB extends RocksObject {
     CheckBounds(offset, len, key.length);
     CheckBounds(vOffset, vLen, value.length);
     return get(nativeHandle_, key, offset, len, value, vOffset, vLen);
-  }
-
-  public int getCritical(final byte[] key, final int offset, final int len,
-                 final byte[] value, final int vOffset, final int vLen)
-      throws RocksDBException {
-    CheckBounds(offset, len, key.length);
-    CheckBounds(vOffset, vLen, value.length);
-    return getCritical(nativeHandle_, key, offset, len, value, vOffset, vLen);
   }
 
   /**
@@ -2225,6 +2233,22 @@ public class RocksDB extends RocksObject {
   }
 
   /**
+   * The simplified version of getCritical which returns a new byte array storing
+   * the value associated with the specified input key if any.  null will be
+   * returned if the specified key is not found.
+   *
+   * @param key the key retrieve the value.
+   * @return a byte array storing the value associated with the input key if
+   *     any. null if it does not find the specified key.
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
+  public byte[] getCritical(final byte[] key) throws RocksDBException {
+    return getCritical(nativeHandle_, key, 0, key.length);
+  }
+
+  /**
    * The simplified version of get which returns a new byte array storing
    * the value associated with the specified input key if any.  null will be
    * returned if the specified key is not found.
@@ -2261,8 +2285,28 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public byte[] get(final ColumnFamilyHandle columnFamilyHandle,
-      final byte[] key) throws RocksDBException {
+                    final byte[] key) throws RocksDBException {
     return get(nativeHandle_, key, 0, key.length,
+        columnFamilyHandle.nativeHandle_);
+  }
+
+  /**
+   * The simplified version of getCritical which returns a new byte array storing
+   * the value associated with the specified input key if any.  null will be
+   * returned if the specified key is not found.
+   *
+   * @param columnFamilyHandle {@link org.rocksdb.ColumnFamilyHandle}
+   *     instance
+   * @param key the key retrieve the value.
+   * @return a byte array storing the value associated with the input key if
+   *     any.  null if it does not find the specified key.
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
+  public byte[] getCritical(final ColumnFamilyHandle columnFamilyHandle,
+                    final byte[] key) throws RocksDBException {
+    return getCritical(nativeHandle_, key, 0, key.length,
         columnFamilyHandle.nativeHandle_);
   }
 
@@ -2349,8 +2393,29 @@ public class RocksDB extends RocksObject {
    *    native library.
    */
   public byte[] get(final ColumnFamilyHandle columnFamilyHandle,
-      final ReadOptions opt, final byte[] key) throws RocksDBException {
+                    final ReadOptions opt, final byte[] key) throws RocksDBException {
     return get(nativeHandle_, opt.nativeHandle_, key, 0, key.length,
+        columnFamilyHandle.nativeHandle_);
+  }
+
+  /**
+   * The simplified version of getCritical which returns a new byte array storing
+   * the value associated with the specified input key if any.  null will be
+   * returned if the specified key is not found.
+   *
+   * @param columnFamilyHandle {@link org.rocksdb.ColumnFamilyHandle}
+   *     instance
+   * @param key the key retrieve the value.
+   * @param opt Read options.
+   * @return a byte array storing the value associated with the input key if
+   *     any. null if it does not find the specified key.
+   *
+   * @throws RocksDBException thrown if error happens in underlying
+   *    native library.
+   */
+  public byte[] getCritical(final ColumnFamilyHandle columnFamilyHandle,
+                    final ReadOptions opt, final byte[] key) throws RocksDBException {
+    return getCritical(nativeHandle_, opt.nativeHandle_, key, 0, key.length,
         columnFamilyHandle.nativeHandle_);
   }
 
@@ -5067,6 +5132,7 @@ public class RocksDB extends RocksObject {
   private static native int get(final long handle, final byte[] key, final int keyOffset,
                                 final int keyLength, final byte[] value, final int valueOffset, final int valueLength)
       throws RocksDBException;
+
   private static native int get(final long handle, final byte[] key, final int keyOffset,
                                 final int keyLength, byte[] value, final int valueOffset, final int valueLength,
                                 final long cfHandle) throws RocksDBException;
@@ -5090,13 +5156,19 @@ public class RocksDB extends RocksObject {
                                 final int valueLength, final long cfHandle) throws RocksDBException;
 
   private static native byte[] get(final long handle, byte[] key, final int keyOffset,
-      final int keyLength) throws RocksDBException;
+                                   final int keyLength) throws RocksDBException;
+  private static native byte[] getCritical(final long handle, byte[] key, final int keyOffset,
+                                   final int keyLength) throws RocksDBException;
   private static native byte[] get(final long handle, final byte[] key, final int keyOffset,
-      final int keyLength, final long cfHandle) throws RocksDBException;
+                                   final int keyLength, final long cfHandle) throws RocksDBException;
+  private static native byte[] getCritical(final long handle, final byte[] key, final int keyOffset,
+                                   final int keyLength, final long cfHandle) throws RocksDBException;
   private static native byte[] get(final long handle, final long readOptHandle, final byte[] key,
       final int keyOffset, final int keyLength) throws RocksDBException;
   private static native byte[] get(final long handle, final long readOptHandle, final byte[] key,
-      final int keyOffset, final int keyLength, final long cfHandle) throws RocksDBException;
+                                   final int keyOffset, final int keyLength, final long cfHandle) throws RocksDBException;
+  private static native byte[] getCritical(final long handle, final long readOptHandle, final byte[] key,
+                                   final int keyOffset, final int keyLength, final long cfHandle) throws RocksDBException;
   private static native byte[][] multiGet(
       final long dbHandle, final byte[][] keys, final int[] keyOffsets, final int[] keyLengths);
   private static native byte[][] multiGet(final long dbHandle, final byte[][] keys,

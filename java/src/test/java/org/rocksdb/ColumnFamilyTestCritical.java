@@ -79,7 +79,7 @@ public class ColumnFamilyTestCritical {
 
                 db.putCritical(cfh, key, value);
 
-                final byte[] actualValue = db.get(cfh, key);
+                final byte[] actualValue = db.getCritical(cfh, key);
 
                 assertThat(cfh).isNotNull();
                 assertThat(actualValue).isEqualTo(value);
@@ -136,13 +136,13 @@ public class ColumnFamilyTestCritical {
             db.putCritical(columnFamilyHandleList.get(1), "newcfkey1".getBytes(), "newcfvalue".getBytes());
 
             final String retVal =
-                new String(db.get(columnFamilyHandleList.get(1), "newcfkey1".getBytes()));
+                new String(db.getCritical(columnFamilyHandleList.get(1), "newcfkey1".getBytes()));
             assertThat(retVal).isEqualTo("newcfvalue");
-            assertThat((db.get(columnFamilyHandleList.get(1), "dfkey1".getBytes()))).isNull();
+            assertThat((db.getCritical(columnFamilyHandleList.get(1), "dfkey1".getBytes()))).isNull();
             db.delete(columnFamilyHandleList.get(1), "newcfkey1".getBytes());
-            assertThat((db.get(columnFamilyHandleList.get(1), "newcfkey1".getBytes()))).isNull();
+            assertThat((db.getCritical(columnFamilyHandleList.get(1), "newcfkey1".getBytes()))).isNull();
             db.delete(columnFamilyHandleList.get(0), new WriteOptions(), "dfkey2".getBytes());
-            assertThat(db.get(columnFamilyHandleList.get(0), new ReadOptions(), "dfkey2".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(0), new ReadOptions(), "dfkey2".getBytes()))
                 .isNull();
         }
     }
@@ -165,7 +165,7 @@ public class ColumnFamilyTestCritical {
              final RocksDB db = RocksDB.open(
                  options, dbFolder.getRoot().getAbsolutePath(), cfNames, columnFamilyHandleList)) {
             assertThat(columnFamilyHandleList.size()).isEqualTo(3);
-            assertThat(db.get(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
                 .isEqualTo("dfvalue_syn_1".getBytes());
             db.putCritical(columnFamilyHandleList.get(1), "dfkey_syn_2".getBytes(), "dfvalue_syn_2".getBytes());
         }
@@ -178,7 +178,7 @@ public class ColumnFamilyTestCritical {
 
         try (final RocksDB db = RocksDB.open(new DBOptions(), dbFolder.getRoot().getAbsolutePath(),
             cfNames2, columnFamilyHandleList2)) {
-            assertThat(db.get("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
+            assertThat(db.getCritical("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
         }
     }
 
@@ -200,7 +200,7 @@ public class ColumnFamilyTestCritical {
              final RocksDB db = RocksDB.open(
                  options, dbFolder.getRoot().getAbsolutePath(), cfNames, columnFamilyHandleList)) {
             assertThat(columnFamilyHandleList.size()).isEqualTo(3);
-            assertThat(db.get(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
                 .isEqualTo("dfvalue_syn_1".getBytes());
             db.putCritical(columnFamilyHandleList.get(1), "dfkey_syn_2".getBytes(), "dfvalue_syn_2".getBytes());
         }
@@ -213,7 +213,7 @@ public class ColumnFamilyTestCritical {
 
         try (final RocksDB db = RocksDB.openReadOnly(new DBOptions(),
             dbFolder.getRoot().getAbsolutePath(), cfNames2, columnFamilyHandleList2)) {
-            assertThat(db.get("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
+            assertThat(db.getCritical("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
         }
     }
 
@@ -236,7 +236,7 @@ public class ColumnFamilyTestCritical {
              final OptimisticTransactionDB db = OptimisticTransactionDB.open(
                  options, dbFolder.getRoot().getAbsolutePath(), cfNames, columnFamilyHandleList)) {
             assertThat(columnFamilyHandleList.size()).isEqualTo(3);
-            assertThat(db.get(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
                 .isEqualTo("dfvalue_syn_1".getBytes());
             db.putCritical(columnFamilyHandleList.get(1), "dfkey_syn_2".getBytes(), "dfvalue_syn_2".getBytes());
         }
@@ -249,7 +249,7 @@ public class ColumnFamilyTestCritical {
 
         try (final OptimisticTransactionDB db = OptimisticTransactionDB.open(new DBOptions(),
             dbFolder.getRoot().getAbsolutePath(), cfNames2, columnFamilyHandleList2)) {
-            assertThat(db.get("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
+            assertThat(db.getCritical("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
         }
     }
 
@@ -274,7 +274,7 @@ public class ColumnFamilyTestCritical {
              final TransactionDB db = TransactionDB.open(options, transactionDBOptions,
                  dbFolder.getRoot().getAbsolutePath(), cfNames, columnFamilyHandleList)) {
             assertThat(columnFamilyHandleList.size()).isEqualTo(3);
-            assertThat(db.get(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
                 .isEqualTo("dfvalue_syn_1".getBytes());
             db.putCritical(columnFamilyHandleList.get(1), "dfkey_syn_2".getBytes(), "dfvalue_syn_2".getBytes());
         }
@@ -288,7 +288,7 @@ public class ColumnFamilyTestCritical {
         try (final TransactionDBOptions transactionDBOptions = new TransactionDBOptions();
              final TransactionDB db = TransactionDB.open(new DBOptions(), transactionDBOptions,
                  dbFolder.getRoot().getAbsolutePath(), cfNames2, columnFamilyHandleList2)) {
-            assertThat(db.get("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
+            assertThat(db.getCritical("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
         }
     }
 
@@ -310,7 +310,7 @@ public class ColumnFamilyTestCritical {
              final TtlDB db = TtlDB.open(options, dbFolder.getRoot().getAbsolutePath(), cfNames,
                  columnFamilyHandleList, Arrays.asList(10, 10, 10), false)) {
             assertThat(columnFamilyHandleList.size()).isEqualTo(3);
-            assertThat(db.get(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
+            assertThat(db.getCritical(columnFamilyHandleList.get(1), "dfkey_syn_1".getBytes()))
                 .isEqualTo("dfvalue_syn_1".getBytes());
             db.putCritical(columnFamilyHandleList.get(1), "dfkey_syn_2".getBytes(), "dfvalue_syn_2".getBytes());
         }
@@ -323,7 +323,7 @@ public class ColumnFamilyTestCritical {
 
         try (final TtlDB db = TtlDB.open(new DBOptions(), dbFolder.getRoot().getAbsolutePath(),
             cfNames2, columnFamilyHandleList2, Arrays.asList(10, 10, 10), false)) {
-            assertThat(db.get("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
+            assertThat(db.getCritical("dfkey_syn_2".getBytes())).isEqualTo("dfvalue_syn_2".getBytes());
         }
     }
 
@@ -387,10 +387,10 @@ public class ColumnFamilyTestCritical {
             db.putCritical("key2".getBytes(), "12345678".getBytes());
             final byte[] outValue = new byte[5];
             // not found value
-            int getResult = db.get("keyNotFound".getBytes(), outValue);
+            int getResult = db.getCritical("keyNotFound".getBytes(), outValue);
             assertThat(getResult).isEqualTo(RocksDB.NOT_FOUND);
             // found value which fits in outValue
-            getResult = db.get(columnFamilyHandleList.get(0), "key1".getBytes(), outValue);
+            getResult = db.getCritical(columnFamilyHandleList.get(0), "key1".getBytes(), outValue);
             assertThat(getResult).isEqualTo("value".getBytes().length);
             assertThat(outValue).isEqualTo("value".getBytes());
             // found value which fits partially
@@ -411,7 +411,7 @@ public class ColumnFamilyTestCritical {
             db.putCritical("key2".getBytes(), "12345678".getBytes());
 
             final byte[] partialOutValue = new byte[5];
-            int getResult = db.get(columnFamilyHandleList.get(0), "key2".getBytes(), partialOutValue);
+            int getResult = db.getCritical(columnFamilyHandleList.get(0), "key2".getBytes(), partialOutValue);
             assertThat(getResult).isEqualTo("12345678".getBytes().length);
             assertThat(partialOutValue).isEqualTo("12345".getBytes());
 
@@ -420,7 +420,7 @@ public class ColumnFamilyTestCritical {
             final byte[] offsetOutValue = "abcdefghjk".getBytes();
             assertThat(offsetOutValue.length).isEqualTo(10);
 
-            getResult = db.get(columnFamilyHandleList.get(0), offsetKeyValue, 3, 4, offsetOutValue, 2, 5);
+            getResult = db.getCritical(columnFamilyHandleList.get(0), offsetKeyValue, 3, 4, offsetOutValue, 2, 5);
             assertThat(getResult).isEqualTo("12345678".getBytes().length);
             assertThat(offsetOutValue).isEqualTo("ab12345hjk".getBytes());
         }
@@ -441,7 +441,7 @@ public class ColumnFamilyTestCritical {
             db.putCritical("key2".getBytes(), "12345678".getBytes());
 
             final byte[] partialOutValue = new byte[5];
-            int getResult = db.get(
+            int getResult = db.getCritical(
                 columnFamilyHandleList.get(0), new ReadOptions(), "key2".getBytes(), partialOutValue);
             assertThat(getResult).isEqualTo("12345678".getBytes().length);
             assertThat(partialOutValue).isEqualTo("12345".getBytes());
@@ -451,7 +451,7 @@ public class ColumnFamilyTestCritical {
             final byte[] offsetOutValue = "abcdefghjk".getBytes();
             assertThat(offsetOutValue.length).isEqualTo(10);
 
-            getResult = db.get(columnFamilyHandleList.get(0), new ReadOptions(), offsetKeyValue, 3, 4,
+            getResult = db.getCritical(columnFamilyHandleList.get(0), new ReadOptions(), offsetKeyValue, 3, 4,
                 offsetOutValue, 2, 5);
             assertThat(getResult).isEqualTo("12345678".getBytes().length);
             assertThat(offsetOutValue).isEqualTo("ab12345hjk".getBytes());
@@ -475,7 +475,7 @@ public class ColumnFamilyTestCritical {
             final byte[] offsetKeyValue = "abckey2hjk".getBytes();
             final byte[] partialOutValue = new byte[5];
 
-            int getResult = db.get(columnFamilyHandleList.get(0), new ReadOptions(), offsetKeyValue, 3, 4,
+            int getResult = db.getCritical(columnFamilyHandleList.get(0), new ReadOptions(), offsetKeyValue, 3, 4,
                 partialOutValue, 2, 5);
         }
     }
@@ -554,14 +554,14 @@ public class ColumnFamilyTestCritical {
                 writeBatch.delete(columnFamilyHandleList.get(1), "xyz".getBytes());
                 db.write(writeOpt, writeBatch);
 
-                assertThat(db.get(columnFamilyHandleList.get(1), "xyz".getBytes())).isNull();
-                assertThat(new String(db.get(columnFamilyHandleList.get(1), "newcfkey".getBytes())))
+                assertThat(db.getCritical(columnFamilyHandleList.get(1), "xyz".getBytes())).isNull();
+                assertThat(new String(db.getCritical(columnFamilyHandleList.get(1), "newcfkey".getBytes())))
                     .isEqualTo("value");
-                assertThat(new String(db.get(columnFamilyHandleList.get(1), "newcfkey2".getBytes())))
+                assertThat(new String(db.getCritical(columnFamilyHandleList.get(1), "newcfkey2".getBytes())))
                     .isEqualTo("value2");
-                assertThat(new String(db.get("key".getBytes()))).isEqualTo("value");
+                assertThat(new String(db.getCritical("key".getBytes()))).isEqualTo("value");
                 // check if key is merged
-                assertThat(new String(db.get(db.getDefaultColumnFamily(), "mergeKey".getBytes())))
+                assertThat(new String(db.getCritical(db.getDefaultColumnFamily(), "mergeKey".getBytes())))
                     .isEqualTo("merge,merge");
             }
         }
@@ -785,7 +785,7 @@ public class ColumnFamilyTestCritical {
                  dbFolder.getRoot().getAbsolutePath(), cfDescriptors,
                  columnFamilyHandleList)) {
             db.dropColumnFamily(columnFamilyHandleList.get(1));
-            db.get(columnFamilyHandleList.get(1), "key".getBytes());
+            db.getCritical(columnFamilyHandleList.get(1), "key".getBytes());
         }
     }
 

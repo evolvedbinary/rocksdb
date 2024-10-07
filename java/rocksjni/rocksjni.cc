@@ -1579,6 +1579,31 @@ jbyteArray Java_org_rocksdb_RocksDB_get__J_3BII(JNIEnv* env, jclass,
 /*
  * Class:     org_rocksdb_RocksDB
  * Method:    get
+ * Signature: (J[BII)[B
+ */
+jbyteArray Java_org_rocksdb_RocksDB_getCritical__J_3BII(JNIEnv* env, jclass,
+                                                jlong jdb_handle,
+                                                jbyteArray jkey, jint jkey_off,
+                                                jint jkey_len) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env,
+        db->Get(ROCKSDB_NAMESPACE::ReadOptions(), db->DefaultColumnFamily(),
+                key.slice(), &value.pinnable_slice()));
+    return value.NewByteArray();
+
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return nullptr;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
+ * Method:    get
  * Signature: (J[BIIJ)[B
  */
 jbyteArray Java_org_rocksdb_RocksDB_get__J_3BIIJ(JNIEnv* env, jclass,
@@ -1595,6 +1620,36 @@ jbyteArray Java_org_rocksdb_RocksDB_get__J_3BIIJ(JNIEnv* env, jclass,
 
   try {
     ROCKSDB_NAMESPACE::JByteArraySlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env, db->Get(ROCKSDB_NAMESPACE::ReadOptions(), cf_handle, key.slice(),
+                     &value.pinnable_slice()));
+    return value.NewByteArray();
+
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return nullptr;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
+ * Method:    get
+ * Signature: (J[BIIJ)[B
+ */
+jbyteArray Java_org_rocksdb_RocksDB_getCritical__J_3BIIJ(JNIEnv* env, jclass,
+                                                 jlong jdb_handle,
+                                                 jbyteArray jkey, jint jkey_off,
+                                                 jint jkey_len,
+                                                 jlong jcf_handle) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+  auto cf_handle = ROCKSDB_NAMESPACE::ColumnFamilyJNIHelpers::handleFromJLong(
+      env, jcf_handle);
+  if (cf_handle == nullptr) {
+    return nullptr;
+  }
+
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
     ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
     ROCKSDB_NAMESPACE::KVException::ThrowOnError(
         env, db->Get(ROCKSDB_NAMESPACE::ReadOptions(), cf_handle, key.slice(),
@@ -1663,6 +1718,34 @@ jbyteArray Java_org_rocksdb_RocksDB_get__JJ_3BIIJ(
 /*
  * Class:     org_rocksdb_RocksDB
  * Method:    get
+ * Signature: (JJ[BIIJ)[B
+ */
+jbyteArray Java_org_rocksdb_RocksDB_getCritical__JJ_3BIIJ(
+    JNIEnv* env, jclass, jlong jdb_handle, jlong jropt_handle, jbyteArray jkey,
+    jint jkey_off, jint jkey_len, jlong jcf_handle) {
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
+  auto cf_handle = ROCKSDB_NAMESPACE::ColumnFamilyJNIHelpers::handleFromJLong(
+      env, jcf_handle);
+  if (cf_handle == nullptr) {
+    return nullptr;
+  }
+
+  try {
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env);
+    ROCKSDB_NAMESPACE::KVException::ThrowOnError(
+        env, db->Get(*reinterpret_cast<ROCKSDB_NAMESPACE::ReadOptions*>(
+                         jropt_handle),
+                     cf_handle, key.slice(), &value.pinnable_slice()));
+    return value.NewByteArray();
+  } catch (ROCKSDB_NAMESPACE::KVException&) {
+    return nullptr;
+  }
+}
+
+/*
+ * Class:     org_rocksdb_RocksDB
+ * Method:    get
  * Signature: (J[BII[BII)I
  */
 jint Java_org_rocksdb_RocksDB_get__J_3BII_3BII(JNIEnv* env, jclass,
@@ -1698,7 +1781,7 @@ jint Java_org_rocksdb_RocksDB_getCritical__J_3BII_3BII(JNIEnv* env, jclass,
                                                jint jval_off, jint jval_len) {
   auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(jdb_handle);
   try {
-    ROCKSDB_NAMESPACE::JByteArraySlice key(env, jkey, jkey_off, jkey_len);
+    ROCKSDB_NAMESPACE::JByteArrayCriticalSlice key(env, jkey, jkey_off, jkey_len);
     ROCKSDB_NAMESPACE::JByteArrayPinnableSlice value(env, jval, jval_off,
                                                      jval_len);
     ROCKSDB_NAMESPACE::KVException::ThrowOnError(
