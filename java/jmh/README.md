@@ -120,4 +120,35 @@ GetBenchmarks.preallocatedGetCritical              no_column_family        1000 
 GetBenchmarks.preallocatedGetRandom                no_column_family        1000        128        65536  thrpt   25  196274.073 ± 4162.104  ops/s
 GetBenchmarks.preallocatedGetRandomCritical        no_column_family        1000        128        65536  thrpt   25  194944.334 ± 5256.324  ops/s
 
+## Put Functionality
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar putCritical putByteArrays -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536
+```
+before threaded refactor
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt     Score      Error  Units
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128        65536  thrpt   25  6766.549 ± 1411.906  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128        65536  thrpt   25  6601.626 ± 1651.342  ops/s
+
+Same incantation, threaded refactor (make explicit the implicit `-t 1`) - should be same results as above.
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar putCritical putByteArrays -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 -t 1
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt     Score      Error  Units
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128        65536  thrpt   25  6298.227 ± 1799.921  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128        65536  thrpt   25  6116.060 ± 1491.642  ops/s
+
+Within margin of error, anyway. But that is a big error bar. We should try a smaller k/v size.
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt     Score      Error  Units
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128        65536  thrpt   25  6712.957 ± 1214.746  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128        65536  thrpt   25  6203.038 ± 1745.341  ops/s
+
+No improvement...
+
+
+
+
 
