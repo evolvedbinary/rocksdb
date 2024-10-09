@@ -146,9 +146,83 @@ Benchmark                            (bufferListSize)  (columnFamilyTestType)  (
 PutBenchmarks.putByteArrays                        16        no_column_family        1000        128        65536  thrpt   25  6712.957 ± 1214.746  ops/s
 PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128        65536  thrpt   25  6203.038 ± 1745.341  ops/s
 
-No improvement...
+No improvement... try with smaller sizes, and maybe `-t 4` ?
 
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar putCritical putByteArrays -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 4
+```
 
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  57069.556 ± 6661.129  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  58576.759 ± 6923.890  ops/s
 
+and vary the number of threads..
 
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar putCritical putByteArrays -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 2
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  57449.449 ± 4772.881  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  58895.204 ± 3275.122  ops/s
+
+But are those Like vs Like ? Do some bigger runs:
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar PutBenchmarks -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 1
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score       Error  Units
+PutBenchmarks.put                                  16        no_column_family        1000        128         4096  thrpt   25  46126.736 ± 10717.984  ops/s
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  38029.538 ±  5177.602  ops/s
+PutBenchmarks.putByteBuffers                       16        no_column_family        1000        128         4096  thrpt   25  39138.315 ±  5065.749  ops/s
+PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  40407.900 ±  4236.854  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  39461.806 ±  5161.390  ops/s
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar PutBenchmarks -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 4
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.put                                  16        no_column_family        1000        128         4096  thrpt   25  38142.975 ± 4993.479  ops/s
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  37255.331 ± 5108.133  ops/s
+PutBenchmarks.putByteBuffers                       16        no_column_family        1000        128         4096  thrpt   25  37730.824 ± 4715.435  ops/s
+PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  38027.659 ± 4587.852  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  76469.730 ± 7903.579  ops/s
+
+That is strange for `putCriticalByteArrays` - check the code is not broken.
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar PutBenchmarks -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 2
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.put                                  16        no_column_family        1000        128         4096  thrpt   25  71708.576 ± 3811.488  ops/s
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  73479.303 ± 1703.478  ops/s
+PutBenchmarks.putByteBuffers                       16        no_column_family        1000        128         4096  thrpt   25  72794.596 ± 2078.256  ops/s
+PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  73582.245 ± 2222.525  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  73296.812 ± 2138.232  ops/s
+
+Curioser and curioser. `4` seems broken.
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar PutBenchmarks -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 8
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.put                                  16        no_column_family        1000        128         4096  thrpt   25  76879.783 ±  946.790  ops/s
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  76941.336 ± 1512.668  ops/s
+PutBenchmarks.putByteBuffers                       16        no_column_family        1000        128         4096  thrpt   25  76978.087 ± 1492.692  ops/s
+PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  78736.512 ± 1187.041  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  76832.689 ± 1084.203  ops/s
+
+Retried the 4x threads version; this one seems more believable. But still very hard to interpret.
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar PutBenchmarks -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=4096 -t 4
+```
+
+Benchmark                            (bufferListSize)  (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt      Score      Error  Units
+PutBenchmarks.put                                  16        no_column_family        1000        128         4096  thrpt   25  85390.061 ± 2097.887  ops/s
+PutBenchmarks.putByteArrays                        16        no_column_family        1000        128         4096  thrpt   25  81344.588 ± 3760.936  ops/s
+PutBenchmarks.putByteBuffers                       16        no_column_family        1000        128         4096  thrpt   25  78762.476 ± 1287.871  ops/s
+PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  75680.153 ± 3412.451  ops/s
+PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  82381.473 ± 3163.506  ops/s
 
