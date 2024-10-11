@@ -62,6 +62,9 @@ public class GetBenchmarks {
     @Param({"1000", "100000"}) int keyCount;
 
     @Setup(Level.Trial) public void setup() {
+      //start each distinct thread at a random point
+      keyIndex = random.nextInt(keyCount);
+
       keyArr = new byte[keySize];
       valueArr = new byte[valueSize];
       keyBuf = ByteBuffer.allocateDirect(keySize);
@@ -75,7 +78,7 @@ public class GetBenchmarks {
     }
 
     private int nextKeyRandom() {
-      return random.nextInt() % keyCount;
+      return random.nextInt(keyCount);
     }
 
     private int nextKey() {
@@ -97,6 +100,9 @@ public class GetBenchmarks {
     }  
 
     private ByteBuffer getKeyBuf(final int keyIdx) {
+
+      keyBuf.clear();
+
       final int MAX_LEN = 9; // key100000
       final String keyStr = "key" + keyIdx;
       for (int i = 0; i < keyStr.length(); ++i) {
@@ -105,12 +111,18 @@ public class GetBenchmarks {
       for (int i = keyStr.length(); i < MAX_LEN; ++i) {
         keyBuf.put(i, (byte) 0x30);
       }
-      // Reset position for future reading
-      keyBuf.position(0);
+      
+      // return the whole buffer to be read
+      keyBuf.position(keyBuf.capacity());
+      keyBuf.flip();
+
       return keyBuf;
     }
   
     private ByteBuffer getValueBuf() {
+
+      valueBuf.clear();
+      
       return valueBuf;
     }
    
@@ -205,55 +217,50 @@ public class GetBenchmarks {
   }
 
   @Benchmark
-  public void get(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
-    blackHole.consume( db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKey())));
+  public byte[] get(ThreadBuffers buffers) throws RocksDBException {
+    return db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKey()));
   }
 
   @Benchmark
-  public void getRandom(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
-    blackHole.consume( db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKeyRandom())));
+  public byte[] getRandom(ThreadBuffers buffers) throws RocksDBException {
+    return db.get(getColumnFamily(), buffers.getKeyArr(buffers.nextKeyRandom()));
   }
 
   @Benchmark
-  public void preallocatedGet(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedGetSerial(ThreadBuffers buffers) throws RocksDBException {
     byte[] value = buffers.getValueArr();
-    blackHole.consume( db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), value));
-    blackHole.consume( value);
+    return db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), value);
   }
 
   @Benchmark
-  public void preallocatedGetCritical(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedGetCritical(ThreadBuffers buffers) throws RocksDBException {
     byte[] value = buffers.getValueArr();
-    blackHole.consume( db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), value));
-    blackHole.consume( value);
+    return db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKey()), value);
   }
 
   @Benchmark
-  public void preallocatedGetRandom(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedGetRandom(ThreadBuffers buffers) throws RocksDBException {
     byte[] value = buffers.getValueArr();
-    blackHole.consume( db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), value));
-    blackHole.consume( value);
+    return db.get(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), value);
   }
 
   @Benchmark
-  public void preallocatedGetRandomCritical(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedGetRandomCritical(ThreadBuffers buffers) throws RocksDBException {
     byte[] value = buffers.getValueArr();
-    blackHole.consume( db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), value));
-    blackHole.consume( value);
+    return db.getCritical(getColumnFamily(), readOptions, buffers.getKeyArr(buffers.nextKeyRandom()), value);
   }
 
   @Benchmark
-  public void preallocatedByteBufferGet(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedByteBufferGetSerial(ThreadBuffers buffers) throws RocksDBException {
     ByteBuffer valueBB = buffers.getValueBuf();
-    blackHole.consume( db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(buffers.nextKey()), valueBB));
-    blackHole.consume( valueBB);
+    int keyIndex = buffers.nextKey();
+    return db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(keyIndex), valueBB);
   }
 
   @Benchmark
-  public void preallocatedByteBufferGetRandom(Blackhole blackHole, ThreadBuffers buffers) throws RocksDBException {
+  public int preallocatedByteBufferGetRandom(ThreadBuffers buffers) throws RocksDBException {
     ByteBuffer valueBB = buffers.getValueBuf();
-    blackHole.consume( db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(buffers.nextKeyRandom()), valueBB));
-    blackHole.consume( valueBB);
+    int keyIndex = buffers.nextKeyRandom();
+    return db.get(getColumnFamily(), readOptions, buffers.getKeyBuf(keyIndex), valueBB);
   }
-
 }

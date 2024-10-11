@@ -226,3 +226,17 @@ PutBenchmarks.putByteBuffers                       16        no_column_family   
 PutBenchmarks.putCritical                          16        no_column_family        1000        128         4096  thrpt   25  75680.153 ± 3412.451  ops/s
 PutBenchmarks.putCriticalByteArrays                16        no_column_family        1000        128         4096  thrpt   25  82381.473 ± 3163.506  ops/s
 
+Fixed some issues with `get()`; added possibly relevant blockholes and fixed a case where the key values might overlay into something unplanned.
+Why does random work so much faster ?
+
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar GetBenchmarks.preallocated GetBenchmarks.preallocatedGetCritical -p columnFamilyTestType="no_column_family" -p keyCount=1000 -p keySize=128 -p valueSize=65536 bufferListSize=256 -t 8
+```
+
+Benchmark                                      (columnFamilyTestType)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt       Score      Error  Units
+GetBenchmarks.preallocatedByteBufferGet              no_column_family        1000        128        65536  thrpt   25  349054.481 ± 4022.765  ops/s
+GetBenchmarks.preallocatedByteBufferGetRandom        no_column_family        1000        128        65536  thrpt   25  592513.805 ± 9067.836  ops/s
+GetBenchmarks.preallocatedGet                        no_column_family        1000        128        65536  thrpt   25  337448.211 ± 1675.154  ops/s
+GetBenchmarks.preallocatedGetCritical                no_column_family        1000        128        65536  thrpt   25  336112.920 ± 1513.136  ops/s
+GetBenchmarks.preallocatedGetRandom                  no_column_family        1000        128        65536  thrpt   25  607826.739 ± 3398.069  ops/s
+GetBenchmarks.preallocatedGetRandomCritical          no_column_family        1000        128        65536  thrpt   25  602986.432 ± 4028.814  ops/s
