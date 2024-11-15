@@ -34,11 +34,13 @@ public class WriteBatch extends AbstractWriteBatch {
 
   /**
    * Constructs a WriteBatch instance with a given size.
+   * Prototype for buffering defers creation of the C++ write batch until <code>flush()</code>
    *
    * @param reserved_bytes reserved size for WriteBatch
    */
   public WriteBatch(final int reserved_bytes) {
-    super(newWriteBatch(reserved_bytes));
+    super(0L);
+    opBuffer = new WriteBatchBuffer(reserved_bytes);
   }
 
   /**
@@ -49,6 +51,19 @@ public class WriteBatch extends AbstractWriteBatch {
    */
   public WriteBatch(final byte[] serialized) {
     super(newWriteBatch(serialized, serialized.length));
+    opBuffer = null;
+  }
+
+  public void flush() throws RocksDBException {
+    opBuffer.flush();
+  }
+
+  public long writeBatchHandle() {
+    return opBuffer.writeBatchHandle();
+  }
+
+  @Override public void close() {
+    opBuffer.close();
   }
 
   /**
@@ -216,13 +231,14 @@ public class WriteBatch extends AbstractWriteBatch {
     super(nativeHandle);
     if(!owningNativeHandle)
       disOwnNativeHandle();
+    opBuffer = null;
   }
 
   @Override
   protected final void disposeInternal(final long handle) {
     disposeInternalJni(handle);
   }
-  private static native void disposeInternalJni(final long handle);
+  static native void disposeInternalJni(final long handle);
 
   @Override
   final int count0(final long handle) {
@@ -234,7 +250,7 @@ public class WriteBatch extends AbstractWriteBatch {
   @Override
   final void put(final long handle, final byte[] key, final int keyLen, final byte[] value,
       final int valueLen) {
-    putJni(handle, key, keyLen, value, valueLen);
+    opBuffer.put(key, keyLen, value, valueLen);
   }
   private static native void putJni(final long handle, final byte[] key, final int keyLen,
       final byte[] value, final int valueLen);
@@ -372,6 +388,7 @@ public class WriteBatch extends AbstractWriteBatch {
 
   private static native long newWriteBatch(final int reserved_bytes);
   private static native long newWriteBatch(final byte[] serialized, final int serializedLength);
+  static native long flushWriteBatchBuffer(final long capacity, final byte[] buf, final int bufLen);
   private static native void iterate(final long handle, final long handlerHandle)
       throws RocksDBException;
   private static native byte[] data(final long nativeHandle) throws RocksDBException;
@@ -501,4 +518,6 @@ public class WriteBatch extends AbstractWriteBatch {
       return (size | count | contentFlags) == 0;
     }
   }
+
+  private final WriteBatchBuffer opBuffer;
 }

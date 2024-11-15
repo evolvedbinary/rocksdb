@@ -61,6 +61,35 @@ jlong Java_org_rocksdb_WriteBatch_newWriteBatch___3BI(JNIEnv* env,
 
 /*
  * Class:     org_rocksdb_WriteBatch
+ * Method:    flushWriteBatchBuffer
+ * Signature: (JJ[B)V
+ */
+jlong Java_org_rocksdb_WriteBatch_flushWriteBatchBuffer(JNIEnv* env,
+                                                        jclass /*jcls*/,
+                                                        jlong wb_capacity,
+                                                        jbyteArray jbuf,
+                                                        jint jbuf_len) {
+  ROCKSDB_NAMESPACE::WriteBatch* wb =
+      new ROCKSDB_NAMESPACE::WriteBatch(static_cast<size_t>(wb_capacity));
+
+  jboolean is_copy;
+  jbyte* buf =
+      reinterpret_cast<jbyte*>(env->GetPrimitiveArrayCritical(jbuf, &is_copy));
+  if (env->ExceptionCheck()) {
+    // exception thrown: OutOfMemoryError
+    return -1L;
+  }
+
+  ROCKSDB_NAMESPACE::WriteBatchInternal::SetContents(
+      wb, ROCKSDB_NAMESPACE::Slice(reinterpret_cast<char*>(buf), jbuf_len));
+
+  env->ReleasePrimitiveArrayCritical(jbuf, buf, JNI_ABORT);
+
+  return GET_CPLUSPLUS_POINTER(wb);
+}
+
+/*
+ * Class:     org_rocksdb_WriteBatch
  * Method:    count0
  * Signature: (J)I
  */

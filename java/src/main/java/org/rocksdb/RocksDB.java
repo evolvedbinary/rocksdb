@@ -1846,7 +1846,7 @@ public class RocksDB extends RocksObject {
    */
   public void write(final WriteOptions writeOpts, final WriteBatch updates)
       throws RocksDBException {
-    write0(nativeHandle_, writeOpts.nativeHandle_, updates.nativeHandle_);
+    write0(nativeHandle_, writeOpts.nativeHandle_, updates.writeBatchHandle());
   }
 
   /**

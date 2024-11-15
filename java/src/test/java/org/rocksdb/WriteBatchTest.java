@@ -46,6 +46,24 @@ public class WriteBatchTest {
     }
   }
 
+  /**
+   * Sanity check writing via experimental batch buffer
+   *
+   * @throws RocksDBException
+   */
+  @Test
+  public void simpleBufferedPut() throws RocksDBException {
+    try (final RocksDB db = RocksDB.open(dbFolder.getRoot().getAbsolutePath()); final WriteBatch batch = new WriteBatch(1024)) {
+      batch.put("k1".getBytes(), "v1".getBytes());
+      batch.put("k3".getBytes(), "v3".getBytes());
+      batch.flush();
+      db.write(new WriteOptions(), batch);
+      assertThat(db.get("k1".getBytes())).isEqualTo("v1".getBytes());
+      assertThat(db.get("k2".getBytes())).isNull();
+      assertThat(db.get("k3".getBytes())).isEqualTo("v3".getBytes());
+    }
+  }
+
   @Test
   public void multipleBatchOperations()
       throws RocksDBException {

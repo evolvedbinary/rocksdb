@@ -70,6 +70,7 @@ public class WriteBatchBenchmarks {
     public void stopBatch() throws RocksDBException {
       if (writeBatch != null) {
         try {
+          writeBatch.flush();
           if (writeToDB) {
             rocksDB.write(new WriteOptions(), writeBatch);
           }
