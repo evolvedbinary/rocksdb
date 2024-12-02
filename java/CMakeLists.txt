@@ -348,6 +348,7 @@ set(JAVA_TEST_CLASSES
   src/test/java/org/rocksdb/ImportColumnFamilyTest.java
   src/test/java/org/rocksdb/InfoLogLevelTest.java
   src/test/java/org/rocksdb/IngestExternalFileOptionsTest.java
+  src/test/java/org/rocksdb/IteratorClosedDBTest.java
   src/test/java/org/rocksdb/KeyExistsTest.java
   src/test/java/org/rocksdb/KeyMayExistTest.java
   src/test/java/org/rocksdb/LRUCacheTest.java
@@ -365,6 +366,7 @@ set(JAVA_TEST_CLASSES
   src/test/java/org/rocksdb/MutableDBOptionsTest.java
   src/test/java/org/rocksdb/MutableOptionsGetSetTest.java
   src/test/java/org/rocksdb/NativeLibraryLoaderTest.java
+  src/test/java/org/rocksdb/OpenItemsTest.java
   src/test/java/org/rocksdb/OptimisticTransactionDBTest.java
   src/test/java/org/rocksdb/OptimisticTransactionOptionsTest.java
   src/test/java/org/rocksdb/OptimisticTransactionTest.java
@@ -466,6 +468,7 @@ set(JAVA_TEST_RUNNING_CLASSES
   org.rocksdb.ImportColumnFamilyTest
   org.rocksdb.InfoLogLevelTest
   org.rocksdb.IngestExternalFileOptionsTest
+  org.rocksdb.IteratorClosedDBTest
   org.rocksdb.KeyExistsTest
   org.rocksdb.KeyMayExistTest
   org.rocksdb.LRUCacheTest
@@ -484,6 +487,7 @@ set(JAVA_TEST_RUNNING_CLASSES
   org.rocksdb.MutableOptionsGetSetTest
   org.rocksdb.NativeComparatorWrapperTest
   org.rocksdb.NativeLibraryLoaderTest
+  org.rocksdb.OpenItemsTest
   org.rocksdb.OptimisticTransactionDBTest
   org.rocksdb.OptimisticTransactionOptionsTest
   org.rocksdb.OptimisticTransactionTest

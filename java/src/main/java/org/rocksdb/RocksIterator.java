@@ -23,8 +23,20 @@ import java.nio.ByteBuffer;
  * @see org.rocksdb.RocksObject
  */
 public class RocksIterator extends AbstractRocksIterator<RocksDB> {
+
+  protected final OpenItems<RocksIterator> openIterators;
   protected RocksIterator(final RocksDB rocksDB, final long nativeHandle) {
     super(rocksDB, nativeHandle);
+    this.openIterators = rocksDB.openIterators;
+    // It is the caller's responsibility to add this to the open iterators
+    // openIterators.add(this);
+    //
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    openIterators.remove(this);
   }
 
   /**

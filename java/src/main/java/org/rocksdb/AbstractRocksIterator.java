@@ -5,6 +5,7 @@
 
 package org.rocksdb;
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 
 /**
@@ -22,7 +23,7 @@ import java.nio.ByteBuffer;
  * @see org.rocksdb.RocksObject
  */
 public abstract class AbstractRocksIterator<P extends RocksObject>
-    extends RocksObject implements RocksIteratorInterface {
+    extends RocksObject implements RocksIteratorInterface, Closeable {
   final P parent_;
 
   protected AbstractRocksIterator(final P parent,

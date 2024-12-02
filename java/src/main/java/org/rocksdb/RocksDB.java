@@ -43,6 +43,8 @@ public class RocksDB extends RocksObject {
 
   final List<ColumnFamilyHandle> ownedColumnFamilyHandles = new ArrayList<>();
 
+  final OpenItems<RocksIterator> openIterators = new OpenItems<>();
+
   /**
    * Loads the necessary library files.
    * Calling this method twice will have no effect.
@@ -674,6 +676,11 @@ public class RocksDB extends RocksObject {
   @SuppressWarnings("PMD.EmptyCatchBlock")
   @Override
   public void close() {
+    try {
+      openIterators.close();
+    } catch (InterruptedException ie) {
+      //ignore the error - we tried to wait for iterators to close, and got interrupted
+    }
     for (final ColumnFamilyHandle columnFamilyHandle : // NOPMD - CloseResource
         ownedColumnFamilyHandles) {
       columnFamilyHandle.close();
@@ -3262,9 +3269,8 @@ public class RocksDB extends RocksObject {
    * @return instance of iterator object.
    */
   public RocksIterator newIterator() {
-    return new RocksIterator(this,
-        iterator(nativeHandle_, defaultColumnFamilyHandle_.nativeHandle_,
-            defaultReadOptions_.nativeHandle_));
+    return openNewRocksIterator( iterator(nativeHandle_, defaultColumnFamilyHandle_.nativeHandle_,
+        defaultReadOptions_.nativeHandle_));
   }
 
   /**
@@ -3281,9 +3287,30 @@ public class RocksDB extends RocksObject {
    * @return instance of iterator object.
    */
   public RocksIterator newIterator(final ReadOptions readOptions) {
-    return new RocksIterator(this,
+    return openNewRocksIterator(
         iterator(
             nativeHandle_, defaultColumnFamilyHandle_.nativeHandle_, readOptions.nativeHandle_));
+  }
+
+  /**
+   * Helper to create a Java iterator from a C++ iterator.
+   * <p>
+   * Check that the database is still open
+   * and record the iterator as blocking the close() of the database
+   *
+   * @param handle of C++ iterator
+   * @return a newly created {@code RocksIterator} if the DB is still open
+   * @throws RuntimeException if the DB has been closed
+   */
+  private RocksIterator openNewRocksIterator(final long handle) {
+    RocksIterator it = new RocksIterator(this, handle);
+    try {
+      openIterators.add(it);
+      return it;
+    } catch (RocksDBException e) {
+      it.close();
+      throw new RuntimeException("Could not create iterator: " + e.getMessage(), e);
+    }
   }
 
   /**
@@ -3302,7 +3329,7 @@ public class RocksDB extends RocksObject {
    */
   public RocksIterator newIterator(
       final ColumnFamilyHandle columnFamilyHandle) {
-    return new RocksIterator(this,
+    return openNewRocksIterator(
         iterator(
             nativeHandle_, columnFamilyHandle.nativeHandle_, defaultReadOptions_.nativeHandle_));
   }
@@ -3324,8 +3351,8 @@ public class RocksDB extends RocksObject {
    */
   public RocksIterator newIterator(final ColumnFamilyHandle columnFamilyHandle,
       final ReadOptions readOptions) {
-    return new RocksIterator(
-        this, iterator(nativeHandle_, columnFamilyHandle.nativeHandle_, readOptions.nativeHandle_));
+    return openNewRocksIterator(
+        iterator(nativeHandle_, columnFamilyHandle.nativeHandle_, readOptions.nativeHandle_));
   }
 
   /**
@@ -3376,7 +3403,7 @@ public class RocksDB extends RocksObject {
     final List<RocksIterator> iterators = new ArrayList<>(
         columnFamilyHandleList.size());
     for (int i=0; i<columnFamilyHandleList.size(); i++){
-      iterators.add(new RocksIterator(this, iteratorRefs[i]));
+      iterators.add(openNewRocksIterator( iteratorRefs[i]));
     }
     return iterators;
   }
