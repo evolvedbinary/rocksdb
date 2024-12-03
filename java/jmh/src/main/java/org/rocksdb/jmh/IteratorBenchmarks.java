@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 import static org.rocksdb.util.KVUtils.baFillValue;
 
@@ -85,6 +87,8 @@ public class IteratorBenchmarks {
 
         public long count = 0;
 
+        public final Random random = new Random();
+
         RocksIterator iterator;
 
         RocksDB rocksDB;
@@ -158,6 +162,21 @@ public class IteratorBenchmarks {
             blackhole.consume(iterator.value());
             scannedDataSize += data.keySize + data.valueSize;
             iterator.next();
+            iteratorThread.count++;
+        }
+    }
+
+    @Benchmark public void iteratorValueSeek(IteratorThread iteratorThread, ByteArrayData data, Blackhole blackhole) {
+        RocksIterator iterator = iteratorThread.iterator;
+        byte[] keyArr = new byte[data.keySize];
+        int scannedDataSize = 0;
+        while (scannedDataSize <= bytesPerIteration) {
+            int keyIndex = iteratorThread.random.nextInt(keyCount);
+            baFillValue(keyArr, "key", keyIndex, KEY_VALUE_MAX_WIDTH, (byte)0x30);
+            iterator.seek(keyArr);
+            blackhole.consume(iterator.key());
+            blackhole.consume(iterator.value());
+            scannedDataSize += data.keySize + data.valueSize;
             iteratorThread.count++;
         }
     }
