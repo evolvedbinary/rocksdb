@@ -6,6 +6,7 @@
 package org.rocksdb;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * Base class implementation for Rocks Iterators
@@ -24,9 +25,10 @@ import java.nio.ByteBuffer;
 public abstract class AbstractRocksIterator<P extends RocksObject>
     extends RocksObject implements RocksIteratorInterface {
   final P parent_;
+  SequentialCache sequentialCache;
 
-  protected AbstractRocksIterator(final P parent,
-      final long nativeHandle) {
+  protected AbstractRocksIterator(
+      final P parent, final long nativeHandle, final int sequentialCacheSize) {
     super(nativeHandle);
     // parent must point to a valid RocksDB instance.
     assert (parent != null);
@@ -34,40 +36,58 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
     // to guarantee that while a GC cycle starts RocksIterator instances
     // are freed prior to parent instances.
     parent_ = parent;
+
+    sequentialCache = new SequentialCache(sequentialCacheSize);
   }
 
   @Override
   public boolean isValid() {
+    if (sequentialCache.beforeEnd()) {
+      return true;
+    }
+
+    // try to fetch a new batch
     assert (isOwningHandle());
-    return isValid0(nativeHandle_);
+    sequentialCache.reset(next0(nativeHandle_, sequentialCache.getBuffer()));
+    // if we got 0 elements, we really are at the end
+    // TODO FIX (AP) there is an edge case where (k,v) doesn't fit in the cache,
+    // which will report FALSE erroneously. It needs a solution for production,
+    // we have not fixed it for the performance testing case.
+    return sequentialCache.beforeEnd();
   }
 
   @Override
   public void seekToFirst() {
     assert (isOwningHandle());
-    seekToFirst0(nativeHandle_);
+    sequentialCache.reset(seekToFirst0(nativeHandle_, sequentialCache.getBuffer()));
   }
 
   @Override
   public void seekToLast() {
+    sequentialCache.clear();
     assert (isOwningHandle());
     seekToLast0(nativeHandle_);
   }
 
   @Override
   public void seek(final byte[] target) {
+    // TODO (AP) seekPosition(nativeHandle_);
+    sequentialCache.clear();
     assert (isOwningHandle());
     seek0(nativeHandle_, target, target.length);
   }
 
   @Override
   public void seekForPrev(final byte[] target) {
+    sequentialCache.clear();
     assert (isOwningHandle());
     seekForPrev0(nativeHandle_, target, target.length);
   }
 
   @Override
   public void seek(final ByteBuffer target) {
+    // TODO (AP) seekDirectPosition/seekByteArrayPosition(nativeHandle_);
+    sequentialCache.clear();
     assert (isOwningHandle());
     if (target.isDirect()) {
       seekDirect0(nativeHandle_, target, target.position(), target.remaining());
@@ -80,6 +100,8 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
 
   @Override
   public void seekForPrev(final ByteBuffer target) {
+    // TODO (AP) seekDirectPosition/seekByteArrayPosition(nativeHandle_);
+    sequentialCache.clear();
     assert (isOwningHandle());
     if (target.isDirect()) {
       seekForPrevDirect0(nativeHandle_, target, target.position(), target.remaining());
@@ -92,24 +114,28 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
 
   @Override
   public void next() {
-    assert (isOwningHandle());
-    next0(nativeHandle_);
+    assert sequentialCache.beforeEnd();
+    sequentialCache.next();
   }
 
   @Override
   public void prev() {
+    // TODO (AP) prevPosition(nativeHandle_);
+    sequentialCache.clear();
     assert (isOwningHandle());
     prev0(nativeHandle_);
   }
 
   @Override
   public void refresh() throws RocksDBException {
+    sequentialCache.clear();
     assert (isOwningHandle());
     refresh0(nativeHandle_);
   }
 
   @Override
   public void refresh(final Snapshot snapshot) throws RocksDBException {
+    sequentialCache.clear();
     assert (isOwningHandle());
     refresh1(nativeHandle_, snapshot.getNativeHandle());
   }
@@ -135,10 +161,139 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
       }
   }
 
+  protected static class SequentialCache {
+    // content instantiated by the C++ native code is an array of bytes
+    // There are n {@code kvCount} key,value pairs
+    // The structure of the buffer is therefore:
+    // flags (4) - currently just bit 0 for kFlagNextIsValid,
+    //   so we don't explicitly twiddle a flags record yet
+    // kv-count (4)
+    // (key0-size,value0-size),key0,value0,
+    // (key1-size,value1-size),key1,value1,
+    // ...
+    // (keyn-1-size,valuen-1-size),...
+    private final static int kFlagsOffset = 0;
+    private final static int kCountOffset = Integer.BYTES;
+    private ByteBuffer buffer;
+    private int kvCount = 0;
+    private int kvPos = 0;
+
+    private int entryOffset;
+
+    SequentialCache(final int size) {
+      if (size > 0) {
+        buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+      } else {
+        buffer = null;
+      }
+    }
+
+    final ByteBuffer getBuffer() {
+      return buffer;
+    }
+
+    /**
+     * Apply a fetched as the new value of the cache
+     *
+     * @param newBuffer the buffer containing some cached data
+     */
+    void reset(final ByteBuffer newBuffer) {
+      if (newBuffer != buffer) {
+        buffer = newBuffer;
+      }
+      kvPos = 0;
+      if (buffer == null) {
+        kvCount = 0;
+      } else {
+        kvCount = buffer.getInt(kCountOffset);
+        entryOffset = Integer.BYTES * 2;
+      }
+    }
+
+    void clear() {
+      kvCount = 0;
+      kvPos = 0;
+    }
+
+    /**
+     * Does this cache have relevant cached data ?
+     *
+     * @return true iff the cache contents are relevant/correct for the current position
+     */
+    boolean beforeEnd() {
+      return kvPos < kvCount;
+    }
+
+    public void next() {
+      kvPos++;
+      int keySize = buffer.getInt(entryOffset);
+      int valueSize = buffer.getInt(entryOffset + Integer.BYTES);
+      entryOffset +=
+          2 * Integer.BYTES + pad(keySize, Integer.BYTES) + pad(valueSize, Integer.BYTES);
+    }
+
+    public byte[] key() {
+      int keySize = buffer.getInt(entryOffset);
+      byte[] keyBuffer = new byte[keySize];
+      buffer.position(entryOffset + 2 * Integer.BYTES);
+      buffer.get(keyBuffer);
+
+      return keyBuffer;
+    }
+
+    public int key(byte[] key, int offset, int length) {
+      int keySize = buffer.getInt(entryOffset);
+      buffer.position(entryOffset + 2 * Integer.BYTES);
+      buffer.get(key, offset, Math.min(keySize, length));
+      return keySize;
+    }
+
+    public int key(ByteBuffer key) {
+      int keySize = buffer.getInt(entryOffset);
+      buffer.position(entryOffset + 2 * Integer.BYTES);
+      ByteBuffer keySlice = buffer.slice();
+      keySlice.limit(Math.min(keySize, key.capacity()));
+      key.put(keySlice).flip();
+      return keySize;
+    }
+
+    public byte[] value() {
+      int keySize = buffer.getInt(entryOffset);
+      int valueSize = buffer.getInt(entryOffset + Integer.BYTES);
+      byte[] valueBuffer = new byte[valueSize];
+      buffer.position(entryOffset + 2 * Integer.BYTES + pad(keySize, Integer.BYTES));
+      buffer.get(valueBuffer);
+
+      return valueBuffer;
+    }
+
+    public int value(byte[] value, int offset, int length) {
+      int keySize = buffer.getInt(entryOffset);
+      int valueSize = buffer.getInt(entryOffset + Integer.BYTES);
+      buffer.position(entryOffset + 2 * Integer.BYTES + pad(keySize, Integer.BYTES));
+      buffer.get(value, offset, Math.min(valueSize, length));
+      return valueSize;
+    }
+
+    public int value(ByteBuffer value) {
+      int keySize = buffer.getInt(entryOffset);
+      int valueSize = buffer.getInt(entryOffset + Integer.BYTES);
+      buffer.position(entryOffset + 2 * Integer.BYTES + pad(keySize, Integer.BYTES));
+      ByteBuffer valueSlice = buffer.slice();
+      valueSlice.limit(Math.min(valueSize, value.capacity()));
+      value.put(valueSlice).flip();
+      return valueSize;
+    }
+  }
+
+  private static int pad(final int size, final int padding) {
+    return (size + padding - 1) & -padding;
+  }
+
   abstract boolean isValid0(long handle);
-  abstract void seekToFirst0(long handle);
+  abstract ByteBuffer seekToFirst0(long handle, ByteBuffer buffer);
   abstract void seekToLast0(long handle);
-  abstract void next0(long handle);
+  abstract ByteBuffer next0(long handle, ByteBuffer buffer);
   abstract void prev0(long handle);
   abstract void refresh0(long handle) throws RocksDBException;
   abstract void refresh1(long handle, long snapshotHandle) throws RocksDBException;

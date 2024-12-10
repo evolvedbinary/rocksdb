@@ -41,15 +41,70 @@ jboolean Java_org_rocksdb_RocksIterator_isValid0Jni(JNIEnv* /*env*/,
   return reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle)->Valid();
 }
 
+jobject iterator_prefetch(JNIEnv* env, ROCKSDB_NAMESPACE::Iterator* it,
+                          jobject jbuf) {
+  const size_t kFlagsOffset = 0;
+  const size_t kCountOffset = sizeof(jint);
+  const size_t kEntriesOffset = 2 * sizeof(jint);
+
+  size_t jbuf_len = static_cast<size_t>(env->GetDirectBufferCapacity(jbuf));
+  void* jbuf_address = env->GetDirectBufferAddress(jbuf);
+  if (jbuf_address == nullptr) {
+    ROCKSDB_NAMESPACE::IllegalArgumentExceptionJni::ThrowNew(
+        env, "Unable to access direct buffer address");
+    return nullptr;
+  }
+  char* buf = reinterpret_cast<char*>(jbuf_address);
+
+  size_t entryOffset = kEntriesOffset;
+  jint count = 0;
+  for (; it->Valid(); count++) {
+    ROCKSDB_NAMESPACE::Slice key_slice = it->key();
+    ROCKSDB_NAMESPACE::Slice value_slice = it->value();
+    size_t key_size = key_slice.size();
+    size_t value_size = value_slice.size();
+    size_t key_size_align = key_size + 3 & ~0x3;
+    size_t value_size_align = value_size + 3 & ~0x3;
+    if (entryOffset + 0x8 + key_size_align + value_size_align >= jbuf_len) {
+      // buffer is full. stop here.
+      // there is a potential inefficiency if a few entries fill "most of" a
+      // buffer
+      // TODO (AP) fix the inefficiency - e.g. allocate/use an overflow buffer
+
+      // we know that there is a Next()
+      *reinterpret_cast<jint*>(buf + kFlagsOffset) = JNI_TRUE;
+      *reinterpret_cast<jint*>(buf + kCountOffset) = count;
+      return jbuf;
+    }
+    reinterpret_cast<jint*>(buf + entryOffset)[0] = static_cast<jint>(key_size);
+    reinterpret_cast<jint*>(buf + entryOffset)[1] =
+        static_cast<jint>(value_size);
+    entryOffset += 0x8;
+    std::memcpy(buf + entryOffset, key_slice.data(), key_size);
+    entryOffset += key_size_align;
+    std::memcpy(buf + entryOffset, value_slice.data(), value_size);
+    entryOffset += value_size_align;
+
+    it->Next();
+  }
+  // we know there is not a Next()
+  *reinterpret_cast<jint*>(buf + kFlagsOffset) = JNI_FALSE;
+  *reinterpret_cast<jint*>(buf + kCountOffset) = count;
+  return jbuf;
+}
+
 /*
  * Class:     org_rocksdb_RocksIterator
- * Method:    seekToFirst0
- * Signature: (J)V
+ * Method:    seekToFirst0Jni
+ * Signature: (J[BI)[B
  */
-void Java_org_rocksdb_RocksIterator_seekToFirst0Jni(JNIEnv* /*env*/,
-                                                    jclass /*jcls*/,
-                                                    jlong handle) {
-  reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle)->SeekToFirst();
+jobject Java_org_rocksdb_RocksIterator_seekToFirst0Jni(JNIEnv* env,
+                                                       jclass /*jcls*/,
+                                                       jlong handle,
+                                                       jobject jbuf) {
+  auto* it = reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle);
+  it->SeekToFirst();
+  return iterator_prefetch(env, it, jbuf);
 }
 
 /*
@@ -65,12 +120,15 @@ void Java_org_rocksdb_RocksIterator_seekToLast0Jni(JNIEnv* /*env*/,
 
 /*
  * Class:     org_rocksdb_RocksIterator
- * Method:    next0
- * Signature: (J)V
+ * Method:    next0Jni
+ * Signature: (J[BI)[B
  */
-void Java_org_rocksdb_RocksIterator_next0Jni(JNIEnv* /*env*/, jclass /*jcls*/,
-                                             jlong handle) {
-  reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle)->Next();
+jobject Java_org_rocksdb_RocksIterator_next0Jni(JNIEnv* env, jclass,
+                                                jlong handle, jobject jbuf) {
+  auto* it = reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle);
+  // we don't call it->Next(); -we should already be at the next item,
+  // after the previous instance of iterator_prefetch
+  return iterator_prefetch(env, it, jbuf);
 }
 
 /*
