@@ -3277,6 +3277,26 @@ public class RocksDB extends RocksObject {
    * The returned iterator should be closed before this db is closed.
    * </p>
    *
+   * @param sequentialCacheSize size in bytes to use for cacheing sequential iteration values
+   * @return instance of iterator object.
+   */
+  public RocksIterator newIterator(final int sequentialCacheSize) {
+    return new RocksIterator(this,
+        iterator(nativeHandle_, defaultColumnFamilyHandle_.nativeHandle_,
+            defaultReadOptions_.nativeHandle_),
+        sequentialCacheSize);
+  }
+
+  /**
+   * <p>Return a heap-allocated iterator over the contents of the
+   * database. The result of newIterator() is initially invalid
+   * (caller must call one of the Seek methods on the iterator
+   * before using it).</p>
+   *
+   * <p>Caller should close the iterator when it is no longer needed.
+   * The returned iterator should be closed before this db is closed.
+   * </p>
+   *
    * @param readOptions {@link ReadOptions} instance.
    * @return instance of iterator object.
    */
@@ -3320,12 +3340,37 @@ public class RocksDB extends RocksObject {
    * @param columnFamilyHandle {@link org.rocksdb.ColumnFamilyHandle}
    *     instance
    * @param readOptions {@link ReadOptions} instance.
+   *
+   * @return instance of iterator object.
+   */
+  public RocksIterator newIterator(
+      final ColumnFamilyHandle columnFamilyHandle, final ReadOptions readOptions) {
+    return new RocksIterator(this,
+        iterator(nativeHandle_, columnFamilyHandle.nativeHandle_, readOptions.nativeHandle_), 0);
+  }
+
+  /**
+   * <p>Return a heap-allocated iterator over the contents of a
+   * ColumnFamily. The result of newIterator() is initially invalid
+   * (caller must call one of the Seek methods on the iterator
+   * before using it).</p>
+   *
+   * <p>Caller should close the iterator when it is no longer needed.
+   * The returned iterator should be closed before this db is closed.
+   * </p>
+   *
+   * @param columnFamilyHandle {@link org.rocksdb.ColumnFamilyHandle}
+   *     instance
+   * @param readOptions {@link ReadOptions} instance.
+   * @param sequentialCacheSize size in bytes to use for cacheing sequential iteration values
+   *
    * @return instance of iterator object.
    */
   public RocksIterator newIterator(final ColumnFamilyHandle columnFamilyHandle,
-      final ReadOptions readOptions) {
-    return new RocksIterator(
-        this, iterator(nativeHandle_, columnFamilyHandle.nativeHandle_, readOptions.nativeHandle_));
+      final ReadOptions readOptions, final int sequentialCacheSize) {
+    return new RocksIterator(this,
+        iterator(nativeHandle_, columnFamilyHandle.nativeHandle_, readOptions.nativeHandle_),
+        sequentialCacheSize);
   }
 
   /**

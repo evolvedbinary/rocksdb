@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
  */
 public class SstFileReaderIterator extends AbstractRocksIterator<SstFileReader> {
   protected SstFileReaderIterator(final SstFileReader reader, final long nativeHandle) {
-    super(reader, nativeHandle);
+    super(reader, nativeHandle, 0);
   }
 
   /**
@@ -121,8 +121,9 @@ public class SstFileReaderIterator extends AbstractRocksIterator<SstFileReader> 
   }
   private static native boolean isValid0Jni(long handle);
   @Override
-  final void seekToFirst0(long handle) {
+  final ByteBuffer seekToFirst0(long handle, ByteBuffer buffer) {
     seekToFirst0Jni(handle);
+    return null;
   }
   private static native void seekToFirst0Jni(long handle);
   @Override
@@ -131,8 +132,9 @@ public class SstFileReaderIterator extends AbstractRocksIterator<SstFileReader> 
   }
   private static native void seekToLast0Jni(long handle);
   @Override
-  final void next0(long handle) {
+  final ByteBuffer next0(long handle, ByteBuffer buffer) {
     next0Jni(handle);
+    return null;
   }
   private static native void next0Jni(long handle);
   @Override
