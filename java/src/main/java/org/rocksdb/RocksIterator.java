@@ -8,6 +8,7 @@ package org.rocksdb;
 import static org.rocksdb.util.BufferUtil.CheckBounds;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 
 /**
  * <p>An iterator that yields a sequence of key/value pairs from a source.
@@ -24,10 +25,8 @@ import java.nio.ByteBuffer;
  */
 public class RocksIterator extends AbstractRocksIterator<RocksDB> {
   protected RocksIterator(final RocksDB rocksDB, final long nativeHandle) {
-    super(rocksDB, nativeHandle, DEFAULT_ITERATOR_SEQUENTIAL_CACHE_SIZE);
+    super(rocksDB, nativeHandle, 0);
   }
-
-  private final static int DEFAULT_ITERATOR_SEQUENTIAL_CACHE_SIZE = 4096;
 
   protected RocksIterator(
       final RocksDB rocksDB, final long nativeHandle, final int sequentialCacheSize) {
@@ -44,8 +43,14 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    * @return key for the current entry.
    */
   public byte[] key() {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.key();
+    Optional<byte[]> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.key();
+    });
+    return cacheKey.orElseGet(() -> {
+      assert (isOwningHandle());
+      return key0(nativeHandle_);
+    });
   }
 
   /**
@@ -62,8 +67,14 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    *     be returned.
    */
   public int key(final byte[] key) {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.key(key, 0, key.length);
+    Optional<Integer> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.key(key, 0, key.length);
+    });
+    return cacheKey.orElseGet(() -> {
+      assert (isOwningHandle());
+      return keyByteArray0(nativeHandle_, key, 0, key.length);
+    });
   }
 
   /**
@@ -83,8 +94,15 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    */
   public int key(final byte[] key, final int offset, final int len) {
     CheckBounds(offset, len, key.length);
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.key(key, offset, len);
+
+    Optional<Integer> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.key(key, offset, len);
+    });
+    return cacheKey.orElseGet(() -> {
+      assert (isOwningHandle());
+      return keyByteArray0(nativeHandle_, key, offset, len);
+    });
   }
 
   /**
@@ -102,8 +120,23 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    *     be returned.
    */
   public int key(final ByteBuffer key) {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.key(key);
+    Optional<Integer> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.key(key);
+    });
+    return cacheKey.orElseGet(() -> {
+      assert isOwningHandle();
+      final int result;
+      if (key.isDirect()) {
+        result = keyDirect0(nativeHandle_, key, key.position(), key.remaining());
+      } else {
+        assert key.hasArray();
+        result = keyByteArray0(
+            nativeHandle_, key.array(), key.arrayOffset() + key.position(), key.remaining());
+      }
+      key.limit(Math.min(key.position() + result, key.limit()));
+      return result;
+    });
   }
 
   /**
@@ -115,8 +148,14 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    * @return value for the current entry.
    */
   public byte[] value() {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.value();
+    Optional<byte[]> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.value();
+    });
+    return cacheKey.orElseGet(() -> {
+      assert (isOwningHandle());
+      return value0(nativeHandle_);
+    });
   }
 
   /**
@@ -134,8 +173,23 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    *     be returned.
    */
   public int value(final ByteBuffer value) {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.value(value);
+    Optional<Integer> cacheValue = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.value(value);
+    });
+    return cacheValue.orElseGet(() -> {
+      assert isOwningHandle();
+      final int result;
+      if (value.isDirect()) {
+        result = valueDirect0(nativeHandle_, value, value.position(), value.remaining());
+      } else {
+        assert value.hasArray();
+        result = valueByteArray0(nativeHandle_, value.array(),
+            value.arrayOffset() + value.position(), value.remaining());
+      }
+      value.limit(Math.min(value.position() + result, value.limit()));
+      return result;
+    });
   }
 
   /**
@@ -152,8 +206,14 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    *     be returned.
    */
   public int value(final byte[] value) {
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.value(value, 0, value.length);
+    Optional<Integer> cacheValue = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.value(value, 0, value.length);
+    });
+    return cacheValue.orElseGet(() -> {
+      assert (isOwningHandle());
+      return valueByteArray0(nativeHandle_, value, 0, value.length);
+    });
   }
 
   /**
@@ -173,8 +233,15 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
    */
   public int value(final byte[] value, final int offset, final int len) {
     CheckBounds(offset, len, value.length);
-    assert sequentialCache.beforeEnd();
-    return sequentialCache.value(value, offset, len);
+
+    Optional<Integer> cacheKey = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      return cache.value(value, offset, len);
+    });
+    return cacheKey.orElseGet(() -> {
+      assert (isOwningHandle());
+      return valueByteArray0(nativeHandle_, value, offset, len);
+    });
   }
 
   @Override final native void refresh1(long handle, long snapshotHandle);
@@ -190,9 +257,15 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
   private static native boolean isValid0Jni(long handle);
 
   @Override
+  final void seekToFirst0(long handle) {
+    seekToFirst0Jni(handle);
+  }
+  @Override
   final ByteBuffer seekToFirst0(long handle, ByteBuffer buffer) {
     return seekToFirst0Jni(handle, buffer);
   }
+
+  private static native void seekToFirst0Jni(long handle);
   private static native ByteBuffer seekToFirst0Jni(long handle, ByteBuffer buffer);
 
   @Override
@@ -202,10 +275,18 @@ public class RocksIterator extends AbstractRocksIterator<RocksDB> {
   private static native void seekToLast0Jni(long handle);
 
   @Override
-  final ByteBuffer next0(long handle, ByteBuffer buffer) {
-    return next0Jni(handle, buffer);
+  final void next0(long handle) {
+    next0Jni(handle);
   }
-  private static native ByteBuffer next0Jni(long handle, ByteBuffer buffer);
+
+  @Override
+  final ByteBuffer prefetch0(long handle, ByteBuffer buffer) {
+    return prefetch0Jni(handle, buffer);
+  }
+
+  private static native void next0Jni(long handle);
+
+  private static native ByteBuffer prefetch0Jni(long handle, ByteBuffer buffer);
 
   @Override
   final void prev0(long handle) {

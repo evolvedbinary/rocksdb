@@ -52,9 +52,13 @@ public class WBWIRocksIterator
   }
   private static native boolean isValid0Jni(long handle);
   @Override
-  final ByteBuffer seekToFirst0(long handle, ByteBuffer buffer) {
+  final void seekToFirst0(long handle) {
     seekToFirst0Jni(handle);
-    return null;
+  }
+  @Override
+  final ByteBuffer seekToFirst0(long handle, ByteBuffer buffer) {
+    throw new UnsupportedOperationException(
+        "Sequential cache not supported for this iterator class: " + getClass().getName());
   }
   private static native void seekToFirst0Jni(long handle);
   @Override
@@ -63,9 +67,13 @@ public class WBWIRocksIterator
   }
   private static native void seekToLast0Jni(long handle);
   @Override
-  final ByteBuffer next0(long handle, ByteBuffer buffer) {
+  final void next0(long handle) {
     next0Jni(handle);
-    return null;
+  }
+  @Override
+  final ByteBuffer prefetch0(long handle, ByteBuffer buffer) {
+    throw new UnsupportedOperationException(
+        "Sequential cache not supported for this iterator class: " + getClass().getName());
   }
   private static native void next0Jni(long handle);
   @Override

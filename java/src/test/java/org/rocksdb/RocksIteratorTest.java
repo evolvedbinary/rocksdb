@@ -9,12 +9,35 @@ import static org.junit.Assert.fail;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class RocksIteratorTest {
+  @Parameterized.Parameters
+  public static List<Integer> prefetchBufferSizes() {
+    return Arrays.asList(0, 1024, 16384);
+  }
+
+  private final int prefetchBufferSize;
+
+  private RocksIterator createIterator(final RocksDB db) {
+    if (prefetchBufferSize == 0) {
+      return db.newIterator();
+    } else {
+      return db.newIterator(prefetchBufferSize);
+    }
+  }
+
+  public RocksIteratorTest(Integer prefetchBufferSize) {
+    this.prefetchBufferSize = prefetchBufferSize;
+  }
 
   @ClassRule
   public static final RocksNativeLibraryResource ROCKS_NATIVE_LIBRARY_RESOURCE =
@@ -53,7 +76,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -85,7 +108,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -125,7 +148,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -165,7 +188,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -200,7 +223,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -286,7 +309,7 @@ public class RocksIteratorTest {
       db.put("key1".getBytes(), "value1".getBytes());
       db.put("key2".getBytes(), "value2".getBytes());
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seek("key0".getBytes());
         assertThat(iterator.isValid()).isTrue();
         assertThat(iterator.key()).isEqualTo("key1".getBytes());
@@ -307,7 +330,7 @@ public class RocksIteratorTest {
         assertThat(iterator.isValid()).isFalse();
       }
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekForPrev("key0".getBytes());
         assertThat(iterator.isValid()).isFalse();
 
@@ -328,7 +351,7 @@ public class RocksIteratorTest {
         assertThat(iterator.key()).isEqualTo("key2".getBytes());
       }
 
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         iterator.seekToFirst();
         assertThat(iterator.isValid()).isTrue();
 
@@ -360,7 +383,7 @@ public class RocksIteratorTest {
       db.put("key2".getBytes(), "value2".getBytes());
 
       try (final Snapshot snapshot = db.getSnapshot()) {
-        try (final RocksIterator iterator = db.newIterator()) {
+        try (final RocksIterator iterator = createIterator(db)) {
           // check for just keys 1 and 2
           iterator.seek("key0".getBytes());
           assertThat(iterator.isValid()).isTrue();
@@ -377,7 +400,7 @@ public class RocksIteratorTest {
         // add a new key (after the snapshot was taken)
         db.put("key3".getBytes(), "value3".getBytes());
 
-        try (final RocksIterator iterator = db.newIterator()) {
+        try (final RocksIterator iterator = createIterator(db)) {
           // check for keys 1, 2, and 3
           iterator.seek("key0".getBytes());
           assertThat(iterator.isValid()).isTrue();
@@ -424,7 +447,7 @@ public class RocksIteratorTest {
       db.put("key".getBytes(), "value".getBytes());
 
       // Test case: release iterator after default CF close
-      try (final RocksIterator iterator = db.newIterator()) {
+      try (final RocksIterator iterator = createIterator(db)) {
         // In fact, calling close() on default CF has no effect
         db.getDefaultColumnFamily().close();
 

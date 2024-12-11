@@ -7,6 +7,7 @@ package org.rocksdb;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Optional;
 
 /**
  * Base class implementation for Rocks Iterators
@@ -25,7 +26,9 @@ import java.nio.ByteOrder;
 public abstract class AbstractRocksIterator<P extends RocksObject>
     extends RocksObject implements RocksIteratorInterface {
   final P parent_;
-  SequentialCache sequentialCache;
+  Optional<SequentialCache> sequentialCache;
+
+  private final static int MIN_SEQUENTIAL_CACHE_SIZE = 1024;
 
   protected AbstractRocksIterator(
       final P parent, final long nativeHandle, final int sequentialCacheSize) {
@@ -37,57 +40,78 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
     // are freed prior to parent instances.
     parent_ = parent;
 
-    sequentialCache = new SequentialCache(sequentialCacheSize);
+    if (sequentialCacheSize == 0) {
+      sequentialCache = Optional.empty();
+    } else if (sequentialCacheSize >= MIN_SEQUENTIAL_CACHE_SIZE) {
+      sequentialCache = Optional.of(new SequentialCache(sequentialCacheSize));
+    } else {
+      throw new IllegalArgumentException(
+          "RocksDB Iterator cache size must be 0, or a value >= " + MIN_SEQUENTIAL_CACHE_SIZE);
+    }
   }
 
   @Override
   public boolean isValid() {
-    if (sequentialCache.beforeEnd()) {
-      return true;
-    }
+    Optional<Boolean> cacheValid = sequentialCache.map(cache -> {
+      if (cache.beforeEnd()) {
+        return true;
+      }
 
-    // try to fetch a new batch
-    assert (isOwningHandle());
-    sequentialCache.reset(next0(nativeHandle_, sequentialCache.getBuffer()));
-    // if we got 0 elements, we really are at the end
-    // TODO FIX (AP) there is an edge case where (k,v) doesn't fit in the cache,
-    // which will report FALSE erroneously. It needs a solution for production,
-    // we have not fixed it for the performance testing case.
-    return sequentialCache.beforeEnd();
+      // try to fetch a new batch
+      assert (isOwningHandle());
+      cache.reset(prefetch0(nativeHandle_, cache.getBuffer()));
+      // if we got 0 elements, we really are at the end
+      // TODO FIX (AP) there is an edge case where (k,v) doesn't fit in the cache,
+      // which will report FALSE erroneously. It needs a solution for production,
+      // we have not fixed it for the performance testing case.
+      return cache.beforeEnd();
+    });
+    return cacheValid.orElseGet(() -> {
+      assert (isOwningHandle());
+      return isValid0(nativeHandle_);
+    });
   }
 
   @Override
   public void seekToFirst() {
-    assert (isOwningHandle());
-    sequentialCache.reset(seekToFirst0(nativeHandle_, sequentialCache.getBuffer()));
+    Optional<Boolean> cacheValid = sequentialCache.map(cache -> {
+      assert (isOwningHandle());
+      cache.reset(seekToFirst0(nativeHandle_, cache.getBuffer()));
+      return true;
+    });
+    cacheValid.orElseGet(() -> {
+      seekToFirst0(nativeHandle_);
+      return true;
+    });
   }
 
   @Override
   public void seekToLast() {
-    sequentialCache.clear();
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     seekToLast0(nativeHandle_);
   }
 
   @Override
   public void seek(final byte[] target) {
-    // TODO (AP) seekPosition(nativeHandle_);
-    sequentialCache.clear();
+    // TODO (AP) - potential optimization to load prefetch cache on seek
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     seek0(nativeHandle_, target, target.length);
   }
 
   @Override
   public void seekForPrev(final byte[] target) {
-    sequentialCache.clear();
+    // TODO (AP) - potential optimization to load prefetch cache on seek
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     seekForPrev0(nativeHandle_, target, target.length);
   }
 
   @Override
   public void seek(final ByteBuffer target) {
-    // TODO (AP) seekDirectPosition/seekByteArrayPosition(nativeHandle_);
-    sequentialCache.clear();
+    // TODO (AP) - potential optimization to load prefetch cache on seek
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     if (target.isDirect()) {
       seekDirect0(nativeHandle_, target, target.position(), target.remaining());
@@ -100,8 +124,8 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
 
   @Override
   public void seekForPrev(final ByteBuffer target) {
-    // TODO (AP) seekDirectPosition/seekByteArrayPosition(nativeHandle_);
-    sequentialCache.clear();
+    // TODO (AP) - potential optimization to load prefetch cache on seek
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     if (target.isDirect()) {
       seekForPrevDirect0(nativeHandle_, target, target.position(), target.remaining());
@@ -114,28 +138,36 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
 
   @Override
   public void next() {
-    assert sequentialCache.beforeEnd();
-    sequentialCache.next();
+    Optional<Boolean> cacheValid = sequentialCache.map(cache -> {
+      assert cache.beforeEnd();
+      cache.next();
+      return true;
+    });
+    cacheValid.orElseGet(() -> {
+      assert (isOwningHandle());
+      next0(nativeHandle_);
+      return true;
+    });
   }
 
   @Override
   public void prev() {
-    // TODO (AP) prevPosition(nativeHandle_);
-    sequentialCache.clear();
+    // TODO (AP) - potential optimization to load prefetch cache on seek
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     prev0(nativeHandle_);
   }
 
   @Override
   public void refresh() throws RocksDBException {
-    sequentialCache.clear();
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     refresh0(nativeHandle_);
   }
 
   @Override
   public void refresh(final Snapshot snapshot) throws RocksDBException {
-    sequentialCache.clear();
+    sequentialCache.ifPresent(SequentialCache::clear);
     assert (isOwningHandle());
     refresh1(nativeHandle_, snapshot.getNativeHandle());
   }
@@ -291,9 +323,11 @@ public abstract class AbstractRocksIterator<P extends RocksObject>
   }
 
   abstract boolean isValid0(long handle);
+  abstract void seekToFirst0(long handle);
   abstract ByteBuffer seekToFirst0(long handle, ByteBuffer buffer);
   abstract void seekToLast0(long handle);
-  abstract ByteBuffer next0(long handle, ByteBuffer buffer);
+  abstract void next0(long handle);
+  abstract ByteBuffer prefetch0(long handle, ByteBuffer buffer);
   abstract void prev0(long handle);
   abstract void refresh0(long handle) throws RocksDBException;
   abstract void refresh1(long handle, long snapshotHandle) throws RocksDBException;

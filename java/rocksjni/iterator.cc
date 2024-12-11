@@ -96,12 +96,21 @@ jobject iterator_prefetch(JNIEnv* env, ROCKSDB_NAMESPACE::Iterator* it,
 /*
  * Class:     org_rocksdb_RocksIterator
  * Method:    seekToFirst0Jni
- * Signature: (J[BI)[B
+ * Signature: (J)V
  */
-jobject Java_org_rocksdb_RocksIterator_seekToFirst0Jni(JNIEnv* env,
-                                                       jclass /*jcls*/,
-                                                       jlong handle,
-                                                       jobject jbuf) {
+void Java_org_rocksdb_RocksIterator_seekToFirst0Jni__J(JNIEnv*, jclass,
+                                                       jlong handle) {
+  reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle)->SeekToFirst();
+}
+
+/*
+ * Class:     org_rocksdb_RocksIterator
+ * Method:    seekToFirst0Jni
+ * Signature: (JLjava/nio/ByteBuffer;)Ljava/nio/ByteBuffer;
+ */
+JNIEXPORT jobject JNICALL
+Java_org_rocksdb_RocksIterator_seekToFirst0Jni__JLjava_nio_ByteBuffer_2(
+    JNIEnv* env, jclass /*jcls*/, jlong handle, jobject jbuf) {
   auto* it = reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle);
   it->SeekToFirst();
   return iterator_prefetch(env, it, jbuf);
@@ -121,10 +130,20 @@ void Java_org_rocksdb_RocksIterator_seekToLast0Jni(JNIEnv* /*env*/,
 /*
  * Class:     org_rocksdb_RocksIterator
  * Method:    next0Jni
- * Signature: (J[BI)[B
+ * Signature: (J)V
  */
-jobject Java_org_rocksdb_RocksIterator_next0Jni(JNIEnv* env, jclass,
-                                                jlong handle, jobject jbuf) {
+void Java_org_rocksdb_RocksIterator_next0Jni(JNIEnv*, jclass, jlong handle) {
+  reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle)->Next();
+}
+
+/*
+ * Class:     org_rocksdb_RocksIterator
+ * Method:    prefetch0Jni
+ * Signature: (JLjava/nio/ByteBuffer;)Ljava/nio/ByteBuffer;
+ */
+jobject Java_org_rocksdb_RocksIterator_prefetch0Jni(JNIEnv* env, jclass,
+                                                    jlong handle,
+                                                    jobject jbuf) {
   auto* it = reinterpret_cast<ROCKSDB_NAMESPACE::Iterator*>(handle);
   // we don't call it->Next(); -we should already be at the next item,
   // after the previous instance of iterator_prefetch

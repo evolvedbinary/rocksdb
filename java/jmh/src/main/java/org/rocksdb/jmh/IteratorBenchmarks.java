@@ -33,6 +33,8 @@ public class IteratorBenchmarks {
 
     @Param({"524288"}) int bytesPerIteration;
 
+    @Param({"0", "4096"}) int iteratorSequentialCacheSize;
+
     @Setup(Level.Trial)
     public void setup(ByteArrayData data) throws IOException, RocksDBException {
         RocksDB.loadLibrary();
@@ -97,7 +99,11 @@ public class IteratorBenchmarks {
         public void setup(IteratorBenchmarks bm) {
 
             this.rocksDB = bm.rocksDB;
-            iterator = rocksDB.newIterator();
+            if (bm.iteratorSequentialCacheSize == 0) {
+              iterator = rocksDB.newIterator();
+            } else {
+              iterator = rocksDB.newIterator(bm.iteratorSequentialCacheSize);
+            }
             iterator.seekToFirst();
         }
 

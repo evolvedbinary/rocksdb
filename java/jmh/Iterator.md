@@ -24,22 +24,51 @@ IteratorBenchmarks.iteratorValueSeek               524288       10000         16
 IteratorBenchmarks.iteratorValueSeek               524288     1000000         16           64  thrpt    5    42.290 ±   0.292  ops/s
 IteratorBenchmarks.iteratorValueSeek               524288     1000000         16         1024  thrpt    5   358.978 ±   8.323  ops/s
 
+## Prefetch Buffer
+
+Hard coded to 4K prefetch buffer size; the prototype fills the buffer with (k,v) pairs if a current buffer does not exist, or is exhausted,
+whenever `isValid()` is called or `seekToFirst()` is called. The latter is *just* an optimization, but can probably be used in general.
+```
+java -jar target/rocksdbjni-jmh-1.0-SNAPSHOT-benchmarks.jar IteratorBenchmarks -p keySize="16" -p valueSize="64","1024" -p keyCount="10000","1000000
+```
 Benchmark                             (bytesPerIteration)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt     Score     Error  Units
-IteratorBenchmarks.iteratorKeyScan                 524288       10000         16           64  thrpt    5   450.626 ±   1.337  ops/s
-IteratorBenchmarks.iteratorKeyScan                 524288       10000         16         1024  thrpt    5  5026.139 ± 147.923  ops/s
-IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16           64  thrpt    5   383.615 ±   3.294  ops/s
-IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16         1024  thrpt    5  2050.581 ± 101.891  ops/s
-IteratorBenchmarks.iteratorScan                    524288       10000         16           64  thrpt    5   451.510 ±   2.523  ops/s
-IteratorBenchmarks.iteratorScan                    524288       10000         16         1024  thrpt    5  4919.945 ±  62.091  ops/s
-IteratorBenchmarks.iteratorScan                    524288     1000000         16           64  thrpt    5   375.768 ±  22.891  ops/s
-IteratorBenchmarks.iteratorScan                    524288     1000000         16         1024  thrpt    5  2055.013 ±  18.676  ops/s
-IteratorBenchmarks.iteratorValueScan               524288       10000         16           64  thrpt    5   324.237 ±   0.738  ops/s
-IteratorBenchmarks.iteratorValueScan               524288       10000         16         1024  thrpt    5  3604.156 ±   8.090  ops/s
-IteratorBenchmarks.iteratorValueScan               524288     1000000         16           64  thrpt    5   288.765 ±   0.940  ops/s
-IteratorBenchmarks.iteratorValueScan               524288     1000000         16         1024  thrpt    5  1712.433 ±  13.794  ops/s
-IteratorBenchmarks.iteratorValueSeek               524288       10000         16           64  thrpt    5   102.069 ±   2.327  ops/s
-IteratorBenchmarks.iteratorValueSeek               524288       10000         16         1024  thrpt    5  1281.491 ±  32.292  ops/s
-IteratorBenchmarks.iteratorValueSeek               524288     1000000         16           64  thrpt    5    39.346 ±   6.037  ops/s
-IteratorBenchmarks.iteratorValueSeek               524288     1000000         16         1024  thrpt    5   343.079 ±  33.315  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288       10000         16           64  thrpt    5   858.904 ±  38.678  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288       10000         16         1024  thrpt    5  7406.196 ± 238.905  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16           64  thrpt    5   653.191 ±  30.103  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16         1024  thrpt    5  2291.894 ± 161.647  ops/s
+IteratorBenchmarks.iteratorScan                    524288       10000         16           64  thrpt    5   910.780 ±  38.874  ops/s
+IteratorBenchmarks.iteratorScan                    524288       10000         16         1024  thrpt    5  7508.076 ±  79.459  ops/s
+IteratorBenchmarks.iteratorScan                    524288     1000000         16           64  thrpt    5   681.176 ±  22.412  ops/s
+IteratorBenchmarks.iteratorScan                    524288     1000000         16         1024  thrpt    5  2328.703 ±  55.765  ops/s
+IteratorBenchmarks.iteratorValueScan               524288       10000         16           64  thrpt    5   712.922 ±  16.278  ops/s
+IteratorBenchmarks.iteratorValueScan               524288       10000         16         1024  thrpt    5  6220.670 ±  30.919  ops/s
+IteratorBenchmarks.iteratorValueScan               524288     1000000         16           64  thrpt    5   560.444 ±  65.903  ops/s
+IteratorBenchmarks.iteratorValueScan               524288     1000000         16         1024  thrpt    5  2108.495 ±  71.026  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288       10000         16           64  thrpt    5   120.347 ±   3.400  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288       10000         16         1024  thrpt    5  1736.110 ± 283.765  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288     1000000         16           64  thrpt    5    47.495 ±   2.019  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288     1000000         16         1024  thrpt    5   392.246 ±   9.930  ops/s
+
+So, it is clear that we can make performance a lot better with the prefetch.
+I will re-run with a bigger batch (16384). This can be configured into the test.
+
+Benchmark                             (bytesPerIteration)  (keyCount)  (keySize)  (valueSize)   Mode  Cnt     Score     Error  Units
+IteratorBenchmarks.iteratorKeyScan                 524288       10000         16           64  thrpt    5   833.313 ±  10.854  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288       10000         16         1024  thrpt    5  8213.562 ±  45.692  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16           64  thrpt    5   632.933 ±  19.567  ops/s
+IteratorBenchmarks.iteratorKeyScan                 524288     1000000         16         1024  thrpt    5  2325.860 ± 208.356  ops/s
+IteratorBenchmarks.iteratorScan                    524288       10000         16           64  thrpt    5   915.513 ±  23.271  ops/s
+IteratorBenchmarks.iteratorScan                    524288       10000         16         1024  thrpt    5  8586.596 ± 358.772  ops/s
+IteratorBenchmarks.iteratorScan                    524288     1000000         16           64  thrpt    5   670.497 ±  24.691  ops/s
+IteratorBenchmarks.iteratorScan                    524288     1000000         16         1024  thrpt    5  2503.754 ±  37.481  ops/s
+IteratorBenchmarks.iteratorValueScan               524288       10000         16           64  thrpt    5   736.573 ±   4.972  ops/s
+IteratorBenchmarks.iteratorValueScan               524288       10000         16         1024  thrpt    5  6986.401 ± 379.970  ops/s
+IteratorBenchmarks.iteratorValueScan               524288     1000000         16           64  thrpt    5   576.508 ±  22.535  ops/s
+IteratorBenchmarks.iteratorValueScan               524288     1000000         16         1024  thrpt    5  2139.957 ±  97.899  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288       10000         16           64  thrpt    5   120.708 ±   1.550  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288       10000         16         1024  thrpt    5  1826.593 ±  70.991  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288     1000000         16           64  thrpt    5    44.350 ±   2.458  ops/s
+IteratorBenchmarks.iteratorValueSeek               524288     1000000         16         1024  thrpt    5   376.191 ±  32.057  ops/s
+
 
 
