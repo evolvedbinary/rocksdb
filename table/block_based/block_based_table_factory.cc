@@ -168,62 +168,73 @@ size_t TailPrefetchStats::GetSuggestedPrefetchSize() {
 
 const std::string kOptNameMetadataCacheOpts = "metadata_cache_options";
 
-static std::unordered_map<std::string, PinningTier>
-    pinning_tier_type_string_map = {
-        {"kFallback", PinningTier::kFallback},
-        {"kNone", PinningTier::kNone},
-        {"kFlushedAndSimilar", PinningTier::kFlushedAndSimilar},
-        {"kAll", PinningTier::kAll}};
+using PinningTierTypeStringMap = std::unordered_map<std::string, PinningTier>;
+STATIC_AVOID_DESTRUCTION(PinningTierTypeStringMap,
+                         pinning_tier_type_string_map)(
+    {{"kFallback", PinningTier::kFallback},
+     {"kNone", PinningTier::kNone},
+     {"kFlushedAndSimilar", PinningTier::kFlushedAndSimilar},
+     {"kAll", PinningTier::kAll}});
 
-static std::unordered_map<std::string, BlockBasedTableOptions::IndexType>
-    block_base_table_index_type_string_map = {
-        {"kBinarySearch", BlockBasedTableOptions::IndexType::kBinarySearch},
-        {"kHashSearch", BlockBasedTableOptions::IndexType::kHashSearch},
-        {"kTwoLevelIndexSearch",
-         BlockBasedTableOptions::IndexType::kTwoLevelIndexSearch},
-        {"kBinarySearchWithFirstKey",
-         BlockBasedTableOptions::IndexType::kBinarySearchWithFirstKey}};
+using IndexTypeStringMap =
+    std::unordered_map<std::string, BlockBasedTableOptions::IndexType>;
+STATIC_AVOID_DESTRUCTION(IndexTypeStringMap,
+                         block_base_table_index_type_string_map)(
+    {{"kBinarySearch", BlockBasedTableOptions::IndexType::kBinarySearch},
+     {"kHashSearch", BlockBasedTableOptions::IndexType::kHashSearch},
+     {"kTwoLevelIndexSearch",
+      BlockBasedTableOptions::IndexType::kTwoLevelIndexSearch},
+     {"kBinarySearchWithFirstKey",
+      BlockBasedTableOptions::IndexType::kBinarySearchWithFirstKey}});
 
-static std::unordered_map<std::string,
-                          BlockBasedTableOptions::DataBlockIndexType>
-    block_base_table_data_block_index_type_string_map = {
-        {"kDataBlockBinarySearch",
-         BlockBasedTableOptions::DataBlockIndexType::kDataBlockBinarySearch},
-        {"kDataBlockBinaryAndHash",
-         BlockBasedTableOptions::DataBlockIndexType::kDataBlockBinaryAndHash}};
+using DataBlockIndexTypeStringMap =
+    std::unordered_map<std::string,
+                       BlockBasedTableOptions::DataBlockIndexType>;
+STATIC_AVOID_DESTRUCTION(DataBlockIndexTypeStringMap,
+                         block_base_table_data_block_index_type_string_map)(
+    {{"kDataBlockBinarySearch",
+      BlockBasedTableOptions::DataBlockIndexType::kDataBlockBinarySearch},
+     {"kDataBlockBinaryAndHash",
+      BlockBasedTableOptions::DataBlockIndexType::kDataBlockBinaryAndHash}});
 
-static std::unordered_map<std::string,
-                          BlockBasedTableOptions::IndexShorteningMode>
-    block_base_table_index_shortening_mode_string_map = {
-        {"kNoShortening",
-         BlockBasedTableOptions::IndexShorteningMode::kNoShortening},
-        {"kShortenSeparators",
-         BlockBasedTableOptions::IndexShorteningMode::kShortenSeparators},
-        {"kShortenSeparatorsAndSuccessor",
-         BlockBasedTableOptions::IndexShorteningMode::
-             kShortenSeparatorsAndSuccessor}};
+using IndexShorteningModeStringMap =
+    std::unordered_map<std::string,
+                       BlockBasedTableOptions::IndexShorteningMode>;
+STATIC_AVOID_DESTRUCTION(IndexShorteningModeStringMap,
+                         block_base_table_index_shortening_mode_string_map)(
+    {{"kNoShortening",
+      BlockBasedTableOptions::IndexShorteningMode::kNoShortening},
+     {"kShortenSeparators",
+      BlockBasedTableOptions::IndexShorteningMode::kShortenSeparators},
+     {"kShortenSeparatorsAndSuccessor",
+      BlockBasedTableOptions::IndexShorteningMode::
+          kShortenSeparatorsAndSuccessor}});
 
-static std::unordered_map<std::string, OptionTypeInfo>
-    metadata_cache_options_type_info = {
-        {"top_level_index_pinning",
-         OptionTypeInfo::Enum<PinningTier>(
-             offsetof(struct MetadataCacheOptions, top_level_index_pinning),
-             &pinning_tier_type_string_map)},
-        {"partition_pinning",
-         OptionTypeInfo::Enum<PinningTier>(
-             offsetof(struct MetadataCacheOptions, partition_pinning),
-             &pinning_tier_type_string_map)},
-        {"unpartitioned_pinning",
-         OptionTypeInfo::Enum<PinningTier>(
-             offsetof(struct MetadataCacheOptions, unpartitioned_pinning),
-             &pinning_tier_type_string_map)}};
+using MetadataCacheOptionsTypeInfo =
+    std::unordered_map<std::string, OptionTypeInfo>;
+STATIC_AVOID_DESTRUCTION(MetadataCacheOptionsTypeInfo,
+                         metadata_cache_options_type_info)(
+    {{"top_level_index_pinning",
+      OptionTypeInfo::Enum<PinningTier>(
+          offsetof(struct MetadataCacheOptions, top_level_index_pinning),
+          &pinning_tier_type_string_map)},
+     {"partition_pinning",
+      OptionTypeInfo::Enum<PinningTier>(
+          offsetof(struct MetadataCacheOptions, partition_pinning),
+          &pinning_tier_type_string_map)},
+     {"unpartitioned_pinning",
+      OptionTypeInfo::Enum<PinningTier>(
+          offsetof(struct MetadataCacheOptions, unpartitioned_pinning),
+          &pinning_tier_type_string_map)}});
 
-static std::unordered_map<std::string,
-                          BlockBasedTableOptions::PrepopulateBlockCache>
-    block_base_table_prepopulate_block_cache_string_map = {
-        {"kDisable", BlockBasedTableOptions::PrepopulateBlockCache::kDisable},
-        {"kFlushOnly",
-         BlockBasedTableOptions::PrepopulateBlockCache::kFlushOnly}};
+using PrepopulateBlockCacheStringMap =
+    std::unordered_map<std::string,
+                       BlockBasedTableOptions::PrepopulateBlockCache>;
+STATIC_AVOID_DESTRUCTION(PrepopulateBlockCacheStringMap,
+                         block_base_table_prepopulate_block_cache_string_map)(
+    {{"kDisable", BlockBasedTableOptions::PrepopulateBlockCache::kDisable},
+     {"kFlushOnly",
+      BlockBasedTableOptions::PrepopulateBlockCache::kFlushOnly}});
 
 static struct BlockBasedTableTypeInfo {
   std::unordered_map<std::string, OptionTypeInfo> info;
