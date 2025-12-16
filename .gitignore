@@ -64,6 +64,7 @@ io_tracer_parser
 java/out
 java/target
 java/test-libs
+java/pom.xml
 java/*.log
 java/include/org_rocksdb_*.h
 
