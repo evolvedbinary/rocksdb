@@ -39,21 +39,21 @@ Set ~/.m2/settings.xml to contain:
     <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
       <servers>
         <server>
-          <id>sonatype-nexus-staging</id>
-          <username>your-sonatype-jira-username</username>
-          <password>your-sonatype-jira-password</password>
+          <id>central</id>
+          <username>your-maven-central-token-username</username>
+          <password>your-maven-central-token-password</password>
         </server>
       </servers>
     </settings>
+
+Note: This uses the new Maven Central Portal (https://central.sonatype.com/). You need to generate a token from your Maven Central Portal account settings.
 
 From RocksDB's root directory, first build the Java static JARs:
 
     make jclean clean rocksdbjavastaticpublish
 
-This command will [stage the JAR artifacts on the Sonatype staging repository](http://central.sonatype.org/pages/manual-staging-bundle-creation-and-deployment.html). To release the staged artifacts.
+This command will deploy the JAR artifacts to Maven Central Portal using the central-publishing-maven-plugin. The plugin will automatically sign the artifacts with GPG and publish them to Maven Central.
 
-1. Go to [https://oss.sonatype.org/#stagingRepositories](https://oss.sonatype.org/#stagingRepositories) and search for "rocksdb" in the upper right hand search box.
-2. Select the rocksdb staging repository, and inspect its contents.
-3. If all is well, follow [these steps](https://oss.sonatype.org/#stagingRepositories) to close the repository and release it.
+The artifacts will be automatically validated and published to Maven Central. You can monitor the deployment status at [https://central.sonatype.com/publishing](https://central.sonatype.com/publishing).
 
-After the release has occurred, the artifacts will be synced to Maven central within 24-48 hours.
+After the deployment is validated and published, the artifacts will be synced to Maven central within a few hours.
