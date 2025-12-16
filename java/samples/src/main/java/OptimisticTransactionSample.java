@@ -89,6 +89,18 @@ public class OptimisticTransactionSample {
 
   /**
    * Demonstrates "Repeatable Read" (Snapshot Isolation) isolation
+   * 
+   * IMPORTANT: When using snapshots, you MUST use same ReadOptions object
+   * (with the snapshot set) for all read operations that need snapshot isolation.
+   * Using different ReadOptions objects or forgetting to set snapshot will
+   * cause reads to see data from outside the snapshot, defeating the purpose of
+   * snapshot isolation.
+   * 
+   * Common mistake:
+   *   ReadOptions ro = new ReadOptions();
+   *   ro.setSnapshot(txn.getSnapshot());
+   *   txn.get(ro, key1);  // Correct - uses snapshot
+   *   txn.multiGetAsList(new ReadOptions(), handles, keys);  // WRONG - no snapshot!
    */
   private static void repeatableRead(final OptimisticTransactionDB txnDb,
       final WriteOptions writeOptions, final ReadOptions readOptions)
@@ -109,6 +121,8 @@ public class OptimisticTransactionSample {
       txnDb.put(writeOptions, key1, value1);
 
       // Read a key using the snapshot.
+      // CRITICAL: This readOptions object with the snapshot MUST be used
+      // for ALL subsequent reads that require snapshot isolation.
       readOptions.setSnapshot(snapshot);
       final byte[] value = txn.getForUpdate(readOptions, key1, true);
       assert (value == null);

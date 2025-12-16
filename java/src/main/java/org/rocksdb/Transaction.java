@@ -152,6 +152,38 @@ public class Transaction extends RocksObject {
    * REQUIRED: The returned Snapshot is only valid up until the next time
    * {@link #setSnapshot()}/{@link #setSnapshotOnNextOperation()} is called,
    * {@link #clearSnapshot()} is called, or the Transaction is deleted.
+   * <p>
+   * <b>CRITICAL USAGE REQUIREMENT:</b> To use snapshot isolation correctly,
+   * you MUST set this snapshot on a {@link ReadOptions} object and use that
+   * SAME {@link ReadOptions} object for all read operations that require
+   * snapshot isolation. Using different {@link ReadOptions} objects, or
+   * using a {@link ReadOptions} without snapshot set, will cause those
+   * reads to see data from outside the snapshot.
+   * <p>
+   * Example of CORRECT usage:
+   * <pre>{@code
+   * Transaction txn = db.beginTransaction(writeOptions);
+   * txn.setSnapshot();
+   * Snapshot snapshot = txn.getSnapshot();
+   * 
+   * ReadOptions ro = new ReadOptions();
+   * ro.setSnapshot(snapshot);  // set snapshot once
+   * 
+   * // Use 'ro' consistently for all reads
+   * byte[] val1 = txn.get(ro, key1);  // uses snapshot
+   * byte[] val2 = txn.get(ro, key2);  // uses snapshot
+   * List<byte[]> values = txn.multiGetAsList(ro, handles, keys);  // Uses snapshot
+   * }</pre>
+   * <p>
+   * Example of INCORRECT usage:
+   * <pre>{@code
+   * ReadOptions ro = new ReadOptions();
+   * ro.setSnapshot(txn.getSnapshot());
+   * 
+   * byte[] val1 = txn.get(ro, key1);  // Uses snapshot - CORRECT
+   * byte[] val2 = txn.get(new ReadOptions(), key2);  // NO snapshot - WRONG!
+   * List<byte[]> values = txn.multiGetAsList(defaultReadOptions, handles, keys);  // NO snapshot - WRONG!
+   * }</pre>
    *
    * @return The snapshot or null if there is no snapshot
    */
