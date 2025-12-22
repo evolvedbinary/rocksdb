@@ -158,6 +158,10 @@ static inline tokutime_t toku_time_now(void) {
   unsigned long result;
   asm volatile("rdtime.d\t%0,$r0" : "=r"(result));
   return result;
+#elif defined(__alpha__)
+  unsigned long result;
+  asm volatile("rpcc %0" : "=r"(result));
+  return result;
 #else
 #error No timer implementation for this platform
 #endif

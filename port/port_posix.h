@@ -174,6 +174,8 @@ static inline void AsmVolatilePause() {
   asm volatile("or 27,27,27");
 #elif defined(__loongarch64)
   asm volatile("dbar 0");
+#elif defined(__alpha__)
+  asm volatile("" ::: "memory");
 #endif
   // it's okay for other platforms to be no-ops
 }
@@ -201,6 +203,8 @@ void InitOnce(OnceType* once, void (*initializer)());
 #endif
 #elif defined(__powerpc__) || defined(__aarch64__)
 #define CACHE_LINE_SIZE 128U
+#elif defined(__alpha__)
+#define CACHE_LINE_SIZE 64U
 #else
 #define CACHE_LINE_SIZE 64U
 #endif

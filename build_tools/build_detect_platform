@@ -671,6 +671,9 @@ if [ "$PORTABLE" == "" ] || [ "$PORTABLE" == 0 ]; then
     if [ -n "${RISCV_ISA}" ]; then
       COMMON_FLAGS="$COMMON_FLAGS -march=${RISC_ISA}"
     fi
+  elif test -n "`echo $TARGET_ARCHITECTURE | grep -e^alpha -e^sw64`"; then
+    # Alpha/SW64 architecture
+    COMMON_FLAGS="$COMMON_FLAGS"
   elif [ "$TARGET_OS" == "IOS" ]; then
     COMMON_FLAGS="$COMMON_FLAGS"
   else
@@ -683,6 +686,9 @@ else
       COMMON_FLAGS="$COMMON_FLAGS -march=z196 "
     elif test -n "`echo $TARGET_ARCHITECTURE | grep ^riscv64`"; then
       COMMON_FLAGS="$COMMON_FLAGS -march=rv64gc"
+    elif test -n "`echo $TARGET_ARCHITECTURE | grep -e^alpha -e^sw64`"; then
+      # Alpha/SW64 portable build - don't set specific march flags
+      COMMON_FLAGS="$COMMON_FLAGS"
     elif test "$USE_SSE"; then
       # USE_SSE is DEPRECATED
       # This is a rough approximation of the old USE_SSE behavior
