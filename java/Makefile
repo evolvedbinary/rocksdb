@@ -286,7 +286,14 @@ endif
 
 # Test whether the version we see meets our minimum
 MIN_JAVAC_MAJOR_VERSION := 8
-JAVAC_VERSION_GE_MIN := $(shell [ $(JAVAC_MAJOR_VERSION) -ge $(MIN_JAVAC_MAJOR_VERSION) ] > /dev/null 2>&1 && echo true)
+# Check if JAVAC_MAJOR_VERSION is a valid number before comparing
+# This handles cases where javac -version fails (e.g., in QEMU emulation)
+JAVAC_VERSION_GE_MIN := $(shell \
+	if echo "$(JAVAC_MAJOR_VERSION)" | grep -qE '^[0-9]+$$'; then \
+		[ $(JAVAC_MAJOR_VERSION) -ge $(MIN_JAVAC_MAJOR_VERSION) ] && echo true; \
+	else \
+		echo false; \
+	fi)
 
 # Set the default JAVA_ARGS to "" for DEBUG_LEVEL=0
 JAVA_ARGS ?=
@@ -324,9 +331,18 @@ endif
 DEPS_URL?=https://rocksdb-deps.s3-us-west-2.amazonaws.com/jars
 
 java-version:
+ifneq ($(SKIP_JAVA_VERSION_CHECK),1)
 ifneq ($(JAVAC_VERSION_GE_MIN),true)
-	echo 'Java version is $(JAVAC_VERSION), minimum required version is $(MIN_JAVAC_MAJOR_VERSION)'
-	exit 1
+	@echo 'Java version check failed.'
+	@echo 'Detected JAVAC_VERSION: $(JAVAC_VERSION)'
+	@echo 'Detected JAVAC_MAJOR_VERSION: $(JAVAC_MAJOR_VERSION)'
+	@echo 'Minimum required version: $(MIN_JAVAC_MAJOR_VERSION)'
+	@echo ''
+	@echo 'This error can occur when running cross-platform Docker builds on ARM-based systems'
+	@echo 'due to QEMU emulation issues with Java. To skip this check, set SKIP_JAVA_VERSION_CHECK=1'
+	@echo 'Example: make SKIP_JAVA_VERSION_CHECK=1 rocksdbjavastaticreleasedocker'
+	@exit 1
+endif
 endif
 
 clean: clean-not-downloaded clean-downloaded
