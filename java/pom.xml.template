@@ -59,8 +59,8 @@
     </mailingLists>
 
     <properties>
-        <project.build.source>19</project.build.source>
-        <project.build.target>19</project.build.target>
+        <project.build.source>21</project.build.source>
+        <project.build.target>21</project.build.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -82,7 +82,7 @@
                 <version>2.18.1</version>
                 <configuration>
                     <argLine>${argLine} -ea -Xcheck:jni -Djava.library.path=${project.build.directory}</argLine>
-                    <useManifestOnlyJar>false</useManifestOnlyJar>  
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/*</additionalClasspathElement>

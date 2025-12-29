@@ -38,7 +38,7 @@
     </scm>
 
     <properties>
-        <project.build.release>19</project.build.release>
+        <project.build.release>21</project.build.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmh.version>1.22</jmh.version>
         <uberjar.name>benchmarks</uberjar.name>
@@ -74,8 +74,8 @@
                     <release>${project.build.release}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <compilerArgs>--enable-preview</compilerArgs>
-                    <source>19</source>
-                    <target>19</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
 
