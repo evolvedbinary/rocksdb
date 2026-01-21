@@ -20,6 +20,7 @@ public class MergeOperatorOutput {
   }
 
   private ByteBuffer directValue;
+  private WideColumn[] wideColumns;
   private OpFailureScope op_failure_scope = OpFailureScope.Default;
 
   public MergeOperatorOutput(final ByteBuffer directValue) {
@@ -31,8 +32,46 @@ public class MergeOperatorOutput {
     this.op_failure_scope = op_failure_scope;
   }
 
+  /**
+   * Constructor for wide columns output (FullMergeV3).
+   *
+   * @param wideColumns the wide columns result
+   */
+  public MergeOperatorOutput(final WideColumn[] wideColumns) {
+    this.wideColumns = wideColumns;
+  }
+
+  /**
+   * Constructor for wide columns output with failure scope (FullMergeV3).
+   *
+   * @param wideColumns the wide columns result
+   * @param op_failure_scope the failure scope
+   */
+  public MergeOperatorOutput(final WideColumn[] wideColumns, final OpFailureScope op_failure_scope) {
+    this.wideColumns = wideColumns;
+    this.op_failure_scope = op_failure_scope;
+  }
+
   public ByteBuffer getDirectValue() {
     return directValue;
+  }
+
+  /**
+   * Gets the wide columns result (FullMergeV3).
+   *
+   * @return the wide columns array, or null if result is a plain value
+   */
+  public WideColumn[] getWideColumns() {
+    return wideColumns;
+  }
+
+  /**
+   * Checks if this output contains wide columns.
+   *
+   * @return true if wide columns, false if plain value
+   */
+  public boolean isWideColumns() {
+    return wideColumns != null;
   }
 
   public OpFailureScope getOp_failure_scope() {
