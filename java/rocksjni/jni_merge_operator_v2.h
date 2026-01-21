@@ -7,6 +7,7 @@
 #include <jni.h>
 
 #include "rocksdb/merge_operator.h"
+#include "rocksdb/wide_columns.h"
 #include "rocksjni/jnicallback.h"
 
 namespace ROCKSDB_NAMESPACE {
@@ -17,6 +18,8 @@ class JniMergeOperatorV2 : public JniCallback, public MergeOperator {
                      char* operator_name);
   bool FullMergeV2(const MergeOperationInput& merge_in,
                    MergeOperationOutput* merge_out) const override;
+  bool FullMergeV3(const MergeOperationInputV3& merge_in,
+                   MergeOperationOutputV3* merge_out) const override;
   const char* Name() const override;
   ~JniMergeOperatorV2() override;
 
@@ -27,9 +30,12 @@ class JniMergeOperatorV2 : public JniCallback, public MergeOperator {
   jclass j_merge_class;
   jclass j_byte_buffer_class;
   jmethodID j_merge_internal;
+  jmethodID j_merge_internal_v3;
   jclass return_value_clazz;
   jmethodID return_value_method;
   jmethodID return_status_method;
+  jmethodID return_wide_columns_method;
+  jmethodID is_wide_columns_method;
   jmethodID byte_buffer_position;
   jmethodID byte_buffer_remaining;
   char* operator_name;
