@@ -38,7 +38,7 @@ Status ChrootFileSystem::PrepareOptions(const ConfigOptions& options) {
     s = target_->FileExists(chroot_dir_, IOOptions(), nullptr);
   }
   if (s.ok()) {
-#if defined(OS_AIX)
+#if defined(OS_AIX) || defined(OS_ZOS)
     char resolvedName[PATH_MAX];
     char* real_chroot_dir = realpath(chroot_dir_.c_str(), resolvedName);
 #else
@@ -47,7 +47,7 @@ Status ChrootFileSystem::PrepareOptions(const ConfigOptions& options) {
     // chroot_dir must exist so realpath() returns non-nullptr.
     assert(real_chroot_dir != nullptr);
     chroot_dir_ = real_chroot_dir;
-#if !defined(OS_AIX)
+#if !defined(OS_AIX) && !defined(OS_ZOS)
     free(real_chroot_dir);
 #endif
   }
@@ -77,7 +77,7 @@ std::pair<IOStatus, std::string> ChrootFileSystem::EncodePath(
   }
   std::pair<IOStatus, std::string> res;
   res.second = chroot_dir_ + path;
-#if defined(OS_AIX)
+#if defined(OS_AIX) || defined(OS_ZOS)
   char resolvedName[PATH_MAX];
   char* normalized_path = realpath(res.second.c_str(), resolvedName);
 #else
@@ -93,7 +93,7 @@ std::pair<IOStatus, std::string> ChrootFileSystem::EncodePath(
   } else {
     res.first = IOStatus::OK();
   }
-#if !defined(OS_AIX)
+#if !defined(OS_AIX) && !defined(OS_ZOS)
   free(normalized_path);
 #endif
   return res;
