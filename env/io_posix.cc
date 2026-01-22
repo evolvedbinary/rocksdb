@@ -351,7 +351,7 @@ size_t PosixHelper::GetUniqueIdFromFile(int fd, char* id, size_t max_size) {
 }
 #endif
 
-#if defined(OS_MACOSX) || defined(OS_AIX)
+#if defined(OS_MACOSX) || defined(OS_AIX) || defined(OS_ZOS)
 size_t PosixHelper::GetUniqueIdFromFile(int fd, char* id, size_t max_size) {
   if (max_size < kMaxVarint64Length * 3) {
     return 0;
@@ -858,7 +858,7 @@ IOStatus PosixRandomAccessFile::Prefetch(uint64_t offset, size_t n,
   return s;
 }
 
-#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_AIX)
+#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_AIX) || defined(OS_ZOS)
 size_t PosixRandomAccessFile::GetUniqueId(char* id, size_t max_size) const {
   return PosixHelper::GetUniqueIdFromFile(fd_, id, max_size);
 }

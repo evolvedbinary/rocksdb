@@ -30,7 +30,7 @@
 // For non linux platform, the following macros are used only as place
 // holder.
 #if !(defined OS_LINUX) && !(defined OS_FREEBSD) && !(defined CYGWIN) && \
-    !(defined OS_AIX) && !(defined OS_ANDROID)
+    !(defined OS_AIX) && !(defined OS_ANDROID) && !(defined OS_ZOS)
 #define POSIX_FADV_NORMAL 0     /* [MC1] no further special treatment */
 #define POSIX_FADV_RANDOM 1     /* [MC1] expect random page refs */
 #define POSIX_FADV_SEQUENTIAL 2 /* [MC1] expect sequential page refs */
@@ -337,7 +337,7 @@ class PosixRandomAccessFile : public FSRandomAccessFile {
   IOStatus Prefetch(uint64_t offset, size_t n, const IOOptions& opts,
                     IODebugContext* dbg) override;
 
-#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_AIX)
+#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_AIX) || defined(OS_ZOS)
   size_t GetUniqueId(char* id, size_t max_size) const override;
 #endif
   void Hint(AccessPattern pattern) override;
