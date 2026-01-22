@@ -35,8 +35,11 @@ ifneq ($(strip $(FOLLY_PATH)),)
 	GLOG_LIB_PATH = $(shell (ls -d $(GLOG_PATH)/lib*))
 	FMT_LIB_PATH = $(shell (ls -d $(FMT_PATH)/lib*))
 
-	# AIX: pre-defined system headers are surrounded by an extern "C" block
+	# AIX/z/OS: pre-defined system headers are surrounded by an extern "C" block
 	ifeq ($(PLATFORM), OS_AIX)
+		PLATFORM_CCFLAGS += -I$(BOOST_PATH)/include -I$(DBL_CONV_PATH)/include -I$(GLOG_PATH)/include -I$(LIBEVENT_PATH)/include -I$(XZ_PATH)/include -I$(LIBSODIUM_PATH)/include -I$(FOLLY_PATH)/include -I$(FMT_PATH)/include
+		PLATFORM_CXXFLAGS += -I$(BOOST_PATH)/include -I$(DBL_CONV_PATH)/include -I$(GLOG_PATH)/include -I$(LIBEVENT_PATH)/include -I$(XZ_PATH)/include -I$(LIBSODIUM_PATH)/include -I$(FOLLY_PATH)/include -I$(FMT_PATH)/include
+	else ifeq ($(PLATFORM), OS_ZOS)
 		PLATFORM_CCFLAGS += -I$(BOOST_PATH)/include -I$(DBL_CONV_PATH)/include -I$(GLOG_PATH)/include -I$(LIBEVENT_PATH)/include -I$(XZ_PATH)/include -I$(LIBSODIUM_PATH)/include -I$(FOLLY_PATH)/include -I$(FMT_PATH)/include
 		PLATFORM_CXXFLAGS += -I$(BOOST_PATH)/include -I$(DBL_CONV_PATH)/include -I$(GLOG_PATH)/include -I$(LIBEVENT_PATH)/include -I$(XZ_PATH)/include -I$(LIBSODIUM_PATH)/include -I$(FOLLY_PATH)/include -I$(FMT_PATH)/include
 	else
@@ -64,8 +67,11 @@ ifeq ($(USE_FOLLY_LITE),1)
 	FOLLY_DIR = ./third-party/folly
 ifneq ($(strip $(BOOST_SOURCE_PATH)),)
 	BOOST_INCLUDE = $(shell (ls -d $(BOOST_SOURCE_PATH)/boost*/))
-	# AIX: pre-defined system headers are surrounded by an extern "C" block
+	# AIX/z/OS: pre-defined system headers are surrounded by an extern "C" block
 	ifeq ($(PLATFORM), OS_AIX)
+		PLATFORM_CCFLAGS += -I$(BOOST_INCLUDE)
+		PLATFORM_CXXFLAGS += -I$(BOOST_INCLUDE)
+	else ifeq ($(PLATFORM), OS_ZOS)
 		PLATFORM_CCFLAGS += -I$(BOOST_INCLUDE)
 		PLATFORM_CXXFLAGS += -I$(BOOST_INCLUDE)
 	else
@@ -75,8 +81,11 @@ ifneq ($(strip $(BOOST_SOURCE_PATH)),)
 endif  # BOOST_SOURCE_PATH
 ifneq ($(strip $(FMT_SOURCE_PATH)),)
 	FMT_INCLUDE = $(shell (ls -d $(FMT_SOURCE_PATH)/fmt*/include/))
-	# AIX: pre-defined system headers are surrounded by an extern "C" block
+	# AIX/z/OS: pre-defined system headers are surrounded by an extern "C" block
 	ifeq ($(PLATFORM), OS_AIX)
+		PLATFORM_CCFLAGS += -I$(FMT_INCLUDE)
+		PLATFORM_CXXFLAGS += -I$(FMT_INCLUDE)
+	else ifeq ($(PLATFORM), OS_ZOS)
 		PLATFORM_CCFLAGS += -I$(FMT_INCLUDE)
 		PLATFORM_CXXFLAGS += -I$(FMT_INCLUDE)
 	else
@@ -84,8 +93,11 @@ ifneq ($(strip $(FMT_SOURCE_PATH)),)
 		PLATFORM_CXXFLAGS += -isystem $(FMT_INCLUDE)
 	endif
 endif  # FMT_SOURCE_PATH
-	# AIX: pre-defined system headers are surrounded by an extern "C" block
+	# AIX/z/OS: pre-defined system headers are surrounded by an extern "C" block
 	ifeq ($(PLATFORM), OS_AIX)
+		PLATFORM_CCFLAGS += -I$(FOLLY_DIR)
+		PLATFORM_CXXFLAGS += -I$(FOLLY_DIR)
+	else ifeq ($(PLATFORM), OS_ZOS)
 		PLATFORM_CCFLAGS += -I$(FOLLY_DIR)
 		PLATFORM_CXXFLAGS += -I$(FOLLY_DIR)
 	else
