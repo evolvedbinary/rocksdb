@@ -307,6 +307,8 @@ $(foreach path, $(missing_make_config_paths), \
 
 ifeq ($(PLATFORM), OS_AIX)
 # no debug info
+else ifeq ($(PLATFORM), OS_ZOS)
+# no debug info for z/OS
 else ifneq ($(PLATFORM), IOS)
 CFLAGS += -g
 CXXFLAGS += -g
@@ -318,6 +320,11 @@ endif
 ifeq ($(PLATFORM), OS_AIX)
 ARFLAGS = -X64 rs
 STRIPFLAGS = -X64 -x
+endif
+
+ifeq ($(PLATFORM), OS_ZOS)
+# z/OS may need specific archiver flags depending on build mode
+# Using defaults for now, can be overridden via environment
 endif
 
 ifeq ($(PLATFORM), OS_SOLARIS)
@@ -380,6 +387,10 @@ ifeq ($(PLATFORM), OS_AIX)
 	PROFILING_FLAGS =
 endif
 
+ifeq ($(PLATFORM), OS_ZOS)
+	PROFILING_FLAGS =
+endif
+
 # USAN doesn't work well with jemalloc. If we're compiling with USAN, we should use regular malloc.
 ifdef COMPILE_WITH_UBSAN
 	DISABLE_JEMALLOC=1
@@ -439,6 +450,9 @@ endif
 GTEST_DIR = third-party/gtest-1.8.1/fused-src
 # AIX: pre-defined system headers are surrounded by an extern "C" block
 ifeq ($(PLATFORM), OS_AIX)
+	PLATFORM_CCFLAGS += -I$(GTEST_DIR)
+	PLATFORM_CXXFLAGS += -I$(GTEST_DIR)
+else ifeq ($(PLATFORM), OS_ZOS)
 	PLATFORM_CCFLAGS += -I$(GTEST_DIR)
 	PLATFORM_CXXFLAGS += -I$(GTEST_DIR)
 else
@@ -1014,10 +1028,12 @@ check: all
 	fi
 	rm -rf $(TEST_TMPDIR)
 ifneq ($(PLATFORM), OS_AIX)
+ifneq ($(PLATFORM), OS_ZOS)
 	$(PYTHON) tools/check_all_python.py
 ifndef ASSERT_STATUS_CHECKED # not yet working with these tests
 	$(PYTHON) tools/ldb_test.py
 	sh tools/rocksdb_dump_test.sh
+endif
 endif
 endif
 ifndef SKIP_FORMAT_BUCK_CHECKS
@@ -2130,6 +2146,12 @@ endif
 ifeq ($(PLATFORM), OS_AIX)
 	JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/aix
 	ROCKSDBJNILIB = librocksdbjni-aix.so
+	EXTRACT_SOURCES = gunzip < TAR_GZ | tar xvf -
+	SNAPPY_MAKE_TARGET = libsnappy.la
+endif
+ifeq ($(PLATFORM), OS_ZOS)
+	JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/zos
+	ROCKSDBJNILIB = librocksdbjni-zos.so
 	EXTRACT_SOURCES = gunzip < TAR_GZ | tar xvf -
 	SNAPPY_MAKE_TARGET = libsnappy.la
 endif
