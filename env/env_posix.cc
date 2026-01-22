@@ -29,7 +29,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if defined(OS_LINUX) || defined(OS_SOLARIS) || defined(OS_ANDROID)
+#if defined(OS_LINUX) || defined(OS_SOLARIS) || defined(OS_ANDROID) || \
+    defined(OS_ZOS)
 #include <sys/statfs.h>
 #endif
 #include <sys/statvfs.h>
@@ -143,7 +144,7 @@ class PosixClock : public SystemClock {
 
   uint64_t NowNanos() override {
 #if defined(OS_LINUX) || defined(OS_FREEBSD) || defined(OS_GNU_KFREEBSD) || \
-    defined(OS_AIX)
+    defined(OS_AIX) || defined(OS_ZOS)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return static_cast<uint64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec;
@@ -165,7 +166,7 @@ class PosixClock : public SystemClock {
 
   uint64_t CPUMicros() override {
 #if defined(OS_LINUX) || defined(OS_FREEBSD) || defined(OS_GNU_KFREEBSD) || \
-    defined(OS_AIX) || (defined(__MACH__) && defined(__MAC_10_12))
+    defined(OS_AIX) || defined(OS_ZOS) || (defined(__MACH__) && defined(__MAC_10_12))
     struct timespec ts;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     return (static_cast<uint64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec) / 1000;
@@ -176,7 +177,7 @@ class PosixClock : public SystemClock {
 
   uint64_t CPUNanos() override {
 #if defined(OS_LINUX) || defined(OS_FREEBSD) || defined(OS_GNU_KFREEBSD) || \
-    defined(OS_AIX) || (defined(__MACH__) && defined(__MAC_10_12))
+    defined(OS_AIX) || defined(OS_ZOS) || (defined(__MACH__) && defined(__MAC_10_12))
     struct timespec ts;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     return static_cast<uint64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec;
