@@ -348,7 +348,7 @@ Options DBTestBase::GetOptions(
   BlockBasedTableOptions table_options;
   bool set_block_based_table_factory = true;
 #if !defined(OS_MACOSX) && !defined(OS_WIN) && !defined(OS_SOLARIS) && \
-    !defined(OS_AIX)
+    !defined(OS_AIX) && !defined(OS_ZOS)
   ROCKSDB_NAMESPACE::SyncPoint::GetInstance()->ClearCallBack(
       "NewRandomAccessFile:O_DIRECT");
   ROCKSDB_NAMESPACE::SyncPoint::GetInstance()->ClearCallBack(
