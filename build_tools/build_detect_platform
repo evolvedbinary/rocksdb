@@ -192,6 +192,15 @@ case "$TARGET_OS" in
         PLATFORM_LDFLAGS="$PLATFORM_LDFLAGS -pthread -lpthread -lrt -maix64 -static-libstdc++ -static-libgcc"
         # PORT_FILES=port/aix/aix_specific.cc
         ;;
+    OS/390)
+        PLATFORM=OS_ZOS
+        if [ -z "$CC" ]; then
+            CC=gcc
+        fi
+        COMMON_FLAGS="$COMMON_FLAGS -pthread -fno-builtin-memcmp -D_REENTRANT -DOS_ZOS -D__STDC_FORMAT_MACROS -D_OPEN_THREADS -D_XOPEN_SOURCE=600"
+        PLATFORM_LDFLAGS="$PLATFORM_LDFLAGS -pthread -lpthread"
+        # PORT_FILES=port/zos/zos_specific.cc
+        ;;
     FreeBSD)
         PLATFORM=OS_FREEBSD
         CXX=clang++
