@@ -763,4 +763,7 @@ JNI_NATIVE_SOURCES =                                          \
   java/rocksjni/writebatchhandlerjnicallback.cc               \
   java/rocksjni/write_batch_test.cc                           \
   java/rocksjni/write_batch_with_index.cc                     \
-  java/rocksjni/write_buffer_manager.cc
+  java/rocksjni/write_buffer_manager.cc                       \
+  java/rocksjni/memory_allocator.cc                           \
+  java/rocksjni/ribbon_filter.cc                              \
+  java/rocksjni/secondary_cache.cc
