@@ -7,9 +7,9 @@ set -e
 # just in-case this is run outside Docker
 mkdir -p /rocksdb-local-build
 
-rm -rf /rocksdb-local-build/*
-cp -r /rocksdb-host/* /rocksdb-local-build
-cd /rocksdb-local-build
+rm -rf /rocksdb-local-build/{*,.[!.]*,..?*}
+cp -r /rocksdb-host/. /rocksdb-local-build
+pushd /rocksdb-local-build
 
 # Use scl devtoolset if available
 if hash scl 2>/dev/null; then
@@ -34,5 +34,6 @@ else
   PORTABLE=1 make -j2 rocksdbjavastatic
 fi
 
-cp java/target/librocksdbjni-linux*.so java/target/rocksdbjni-*-linux*.jar java/target/rocksdbjni-*-linux*.jar.sha1 /rocksdb-java-target
+cp java/target-native/librocksdbjni-linux*.so /rocksdb-java-target
 
+popd

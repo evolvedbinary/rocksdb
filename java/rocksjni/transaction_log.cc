@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "include/org_rocksdb_TransactionLogIterator.h"
-#include "rocksjni/portal.h"
+#include "org_rocksdb_TransactionLogIterator.h"
+#include "portal.h"
 
 /*
  * Class:     org_rocksdb_TransactionLogIterator

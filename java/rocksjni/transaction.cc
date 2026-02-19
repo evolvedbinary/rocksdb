@@ -12,10 +12,10 @@
 
 #include <functional>
 
-#include "include/org_rocksdb_Transaction.h"
-#include "rocksjni/cplusplus_to_java_convert.h"
-#include "rocksjni/kv_helper.h"
-#include "rocksjni/portal.h"
+#include "org_rocksdb_Transaction.h"
+#include "cplusplus_to_java_convert.h"
+#include "kv_helper.h"
+#include "portal.h"
 
 #if defined(_MSC_VER)
 #pragma warning(push)
