@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "include/org_rocksdb_WalIterator.h"
-#include "rocksjni/portal.h"
+#include "org_rocksdb_WalIterator.h"
+#include "portal.h"
 
 /*
  * Class:     org_rocksdb_WalIterator
