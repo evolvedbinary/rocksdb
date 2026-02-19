@@ -9,9 +9,9 @@
 
 #include <cassert>
 
-#include "include/org_rocksdb_WriteBufferManager.h"
+#include "org_rocksdb_WriteBufferManager.h"
 #include "rocksdb/cache.h"
-#include "rocksjni/cplusplus_to_java_convert.h"
+#include "cplusplus_to_java_convert.h"
 
 /*
  * Class:     org_rocksdb_WriteBufferManager
