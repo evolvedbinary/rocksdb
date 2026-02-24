@@ -5,26 +5,26 @@
 
 package org.rocksdb;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.File;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OptimisticTransactionDBTest {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-  @Rule
-  public TemporaryFolder dbFolder = new TemporaryFolder();
+public class OptimisticTransactionDBTest {  @TempDir
+  public File dbFolder;
 
   @Test
   public void open() throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(options,
-                 dbFolder.getRoot().getAbsolutePath())) {
+                 dbFolder.getAbsolutePath())) {
       assertThat(otdb).isNotNull();
     }
   }
@@ -43,7 +43,7 @@ public class OptimisticTransactionDBTest {
       final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
 
       try (final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(dbOptions,
-               dbFolder.getRoot().getAbsolutePath(),
+               dbFolder.getAbsolutePath(),
                columnFamilyDescriptors, columnFamilyHandles)) {
         try {
           assertThat(otdb).isNotNull();
@@ -60,7 +60,7 @@ public class OptimisticTransactionDBTest {
   public void beginTransaction() throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(
-             options, dbFolder.getRoot().getAbsolutePath());
+             options, dbFolder.getAbsolutePath());
         final WriteOptions writeOptions = new WriteOptions()) {
 
       try(final Transaction txn = otdb.beginTransaction(writeOptions)) {
@@ -73,7 +73,7 @@ public class OptimisticTransactionDBTest {
   public void beginTransaction_transactionOptions() throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(
-             options, dbFolder.getRoot().getAbsolutePath());
+             options, dbFolder.getAbsolutePath());
          final WriteOptions writeOptions = new WriteOptions();
          final OptimisticTransactionOptions optimisticTxnOptions =
              new OptimisticTransactionOptions()) {
@@ -89,7 +89,7 @@ public class OptimisticTransactionDBTest {
   public void beginTransaction_withOld() throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(
-             options, dbFolder.getRoot().getAbsolutePath());
+             options, dbFolder.getAbsolutePath());
          final WriteOptions writeOptions = new WriteOptions()) {
 
       try(final Transaction txn = otdb.beginTransaction(writeOptions)) {
@@ -104,7 +104,7 @@ public class OptimisticTransactionDBTest {
       throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(
-             options, dbFolder.getRoot().getAbsolutePath());
+             options, dbFolder.getAbsolutePath());
          final WriteOptions writeOptions = new WriteOptions();
          final OptimisticTransactionOptions optimisticTxnOptions =
              new OptimisticTransactionOptions()) {
@@ -121,7 +121,7 @@ public class OptimisticTransactionDBTest {
   public void baseDB() throws RocksDBException {
     try (final Options options = new Options().setCreateIfMissing(true);
          final OptimisticTransactionDB otdb = OptimisticTransactionDB.open(options,
-             dbFolder.getRoot().getAbsolutePath())) {
+             dbFolder.getAbsolutePath())) {
       assertThat(otdb).isNotNull();
       final RocksDB db = otdb.getBaseDB();
       assertThat(db).isNotNull();

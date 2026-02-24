@@ -5,24 +5,25 @@
 
 package org.rocksdb;
 
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import java.util.Collection;
-import java.util.List;
+import java.io.File;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.List;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
+
 public class DefaultEnvTest {
 
-  @ClassRule
+  @RegisterExtension
   public static final RocksNativeLibraryResource ROCKS_NATIVE_LIBRARY_RESOURCE =
       new RocksNativeLibraryResource();
 
-  @Rule
-  public TemporaryFolder dbFolder = new TemporaryFolder();
+  @TempDir
+  public File dbFolder;
 
   @Test
   public void backgroundThreads() {
@@ -88,9 +89,14 @@ public class DefaultEnvTest {
 
   @Test
   public void threadList() throws RocksDBException {
-    try (final Env defaultEnv = RocksEnv.getDefault()) {
-      final Collection<ThreadStatus> threadList = defaultEnv.getThreadList();
-      assertThat(threadList.size()).isGreaterThan(0);
+    // We need to open DB first to get at least one thread in thread list.
+    try (final RocksDB db = RocksDB.open(dbFolder.getAbsolutePath())) {
+      db.put("test-key".getBytes(StandardCharsets.UTF_8),
+          "test-value".getBytes(StandardCharsets.UTF_8));
+      try (final Env defaultEnv = RocksEnv.getDefault()) {
+        final Collection<ThreadStatus> threadList = defaultEnv.getThreadList();
+        assertThat(threadList.size()).isGreaterThan(0);
+      }
     }
   }
 
@@ -103,7 +109,7 @@ public class DefaultEnvTest {
             .setEnv(env)) {
       // open database
       try (final RocksDB db = RocksDB.open(opt,
-          dbFolder.getRoot().getAbsolutePath())) {
+          dbFolder.getAbsolutePath())) {
 
         final List<ThreadStatus> threadList = env.getThreadList();
         assertThat(threadList.size()).isGreaterThan(0);

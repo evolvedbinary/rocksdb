@@ -4,30 +4,31 @@
 //  (found in the LICENSE.Apache file in the root directory).
 package org.rocksdb;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import java.io.File;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
 import org.rocksdb.util.TestUtil;
 
 public class MultiGetTest {
-  @ClassRule
+  @RegisterExtension
   public static final RocksNativeLibraryResource ROCKS_NATIVE_LIBRARY_RESOURCE =
       new RocksNativeLibraryResource();
 
-  @Rule public TemporaryFolder dbFolder = new TemporaryFolder();
+  @TempDir public File dbFolder;
 
   @Test
   public void putNThenMultiGet() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -44,7 +45,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirect() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -104,9 +105,68 @@ public class MultiGetTest {
   }
 
   @Test
-  public void putNThenMultiGetDirectSliced() throws RocksDBException {
+  public void putNThenMultiGetDirectWithMissing() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
          final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+      db.put("key1".getBytes(), "value1ForKey1".getBytes());
+      db.put("key3".getBytes(), "value3ForKey3".getBytes());
+
+      final List<ByteBuffer> keys = new ArrayList<>();
+      keys.add(ByteBuffer.allocateDirect(12).put("key1".getBytes()));
+      keys.add(ByteBuffer.allocateDirect(12).put("key2".getBytes()));
+      keys.add(ByteBuffer.allocateDirect(12).put("key3".getBytes()));
+      // Java8 and lower flip() returns Buffer not ByteBuffer, so can't chain above /\/\
+      for (final ByteBuffer key : keys) {
+        key.flip();
+      }
+      final List<ByteBuffer> values = new ArrayList<>();
+      for (int i = 0; i < keys.size(); i++) {
+        values.add(ByteBuffer.allocateDirect(24));
+      }
+
+      {
+        final List<ByteBufferGetStatus> results = db.multiGetByteBuffers(keys, values);
+
+        assertThat(results.get(0).status.getCode()).isEqualTo(Status.Code.Ok);
+        assertThat(results.get(1).status.getCode()).isEqualTo(Status.Code.NotFound);
+        assertThat(results.get(2).status.getCode()).isEqualTo(Status.Code.Ok);
+
+        assertThat(results.get(0).requiredSize).isEqualTo("value1ForKey1".getBytes().length);
+        assertThat(results.get(1).requiredSize).isEqualTo(0);
+        assertThat(results.get(2).requiredSize).isEqualTo("value3ForKey3".getBytes().length);
+
+        assertThat(TestUtil.bufferBytes(results.get(0).value))
+            .isEqualTo("value1ForKey1".getBytes());
+        assertThat(results.get(1).value).isNull();
+        assertThat(TestUtil.bufferBytes(results.get(2).value))
+            .isEqualTo("value3ForKey3".getBytes());
+      }
+
+      {
+        final List<ByteBufferGetStatus> results =
+            db.multiGetByteBuffers(new ReadOptions(), keys, values);
+
+        assertThat(results.get(0).status.getCode()).isEqualTo(Status.Code.Ok);
+        assertThat(results.get(1).status.getCode()).isEqualTo(Status.Code.NotFound);
+        assertThat(results.get(2).status.getCode()).isEqualTo(Status.Code.Ok);
+
+        assertThat(results.get(0).requiredSize).isEqualTo("value1ForKey1".getBytes().length);
+        assertThat(results.get(1).requiredSize).isEqualTo(0);
+        assertThat(results.get(2).requiredSize).isEqualTo("value3ForKey3".getBytes().length);
+
+        assertThat(TestUtil.bufferBytes(results.get(0).value))
+            .isEqualTo("value1ForKey1".getBytes());
+        assertThat(results.get(1).value).isNull();
+        assertThat(TestUtil.bufferBytes(results.get(2).value))
+            .isEqualTo("value3ForKey3".getBytes());
+      }
+    }
+  }
+
+  @Test
+  public void putNThenMultiGetDirectSliced() throws RocksDBException {
+    try (final Options opt = new Options().setCreateIfMissing(true);
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -147,9 +207,50 @@ public class MultiGetTest {
   }
 
   @Test
-  public void putNThenMultiGetDirectBadValuesArray() throws RocksDBException {
+  public void putNThenMultiGetDirectSlicedWithMissing() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
          final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+      db.put("key1".getBytes(), "value1ForKey1".getBytes());
+      db.put("key3".getBytes(), "value3ForKey3".getBytes());
+
+      final List<ByteBuffer> keys = new ArrayList<>();
+      keys.add(ByteBuffer.allocateDirect(12).put("key2".getBytes()));
+      keys.add(ByteBuffer.allocateDirect(12).put("key3".getBytes()));
+      keys.add(
+          ByteBuffer.allocateDirect(12).put("prefix1".getBytes()).slice().put("key1".getBytes()));
+      // Java8 and lower flip() returns Buffer not ByteBuffer, so can't chain above /\/\
+      for (final ByteBuffer key : keys) {
+        key.flip();
+      }
+      final List<ByteBuffer> values = new ArrayList<>();
+      for (int i = 0; i < keys.size(); i++) {
+        values.add(ByteBuffer.allocateDirect(24));
+      }
+
+      {
+        final List<ByteBufferGetStatus> results = db.multiGetByteBuffers(keys, values);
+
+        assertThat(results.get(0).status.getCode()).isEqualTo(Status.Code.NotFound);
+        assertThat(results.get(1).status.getCode()).isEqualTo(Status.Code.Ok);
+        assertThat(results.get(2).status.getCode()).isEqualTo(Status.Code.Ok);
+
+        assertThat(results.get(1).requiredSize).isEqualTo("value3ForKey3".getBytes().length);
+        assertThat(results.get(2).requiredSize).isEqualTo("value1ForKey1".getBytes().length);
+        assertThat(results.get(0).requiredSize).isEqualTo(0);
+
+        assertThat(results.get(0).value).isNull();
+        assertThat(TestUtil.bufferBytes(results.get(1).value))
+            .isEqualTo("value3ForKey3".getBytes());
+        assertThat(TestUtil.bufferBytes(results.get(2).value))
+            .isEqualTo("value1ForKey1".getBytes());
+      }
+    }
+  }
+
+  @Test
+  public void putNThenMultiGetDirectBadValuesArray() throws RocksDBException {
+    try (final Options opt = new Options().setCreateIfMissing(true);
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -200,7 +301,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectShortValueBuffers() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -237,7 +338,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectNondefaultCF() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       final List<ColumnFamilyDescriptor> cfDescriptors = new ArrayList<>(0);
       cfDescriptors.add(new ColumnFamilyDescriptor("cf0".getBytes()));
       cfDescriptors.add(new ColumnFamilyDescriptor("cf1".getBytes()));
@@ -321,7 +422,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectCFParams() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key2".getBytes(), "value2ForKey2".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
@@ -371,7 +472,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectMixedCF() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       final List<ColumnFamilyDescriptor> cfDescriptors = new ArrayList<>();
       cfDescriptors.add(new ColumnFamilyDescriptor("cf0".getBytes()));
       cfDescriptors.add(new ColumnFamilyDescriptor("cf1".getBytes()));
@@ -480,7 +581,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectTruncateCF() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       final List<ColumnFamilyDescriptor> cfDescriptors = new ArrayList<>();
       cfDescriptors.add(new ColumnFamilyDescriptor("cf0".getBytes()));
 

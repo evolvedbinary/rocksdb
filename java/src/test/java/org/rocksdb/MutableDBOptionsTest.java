@@ -4,14 +4,25 @@
 //  (found in the LICENSE.Apache file in the root directory).
 package org.rocksdb;
 
-import org.junit.Test;
-import org.rocksdb.MutableDBOptions.MutableDBOptionsBuilder;
-
-import java.util.NoSuchElementException;
+import java.io.File;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
+import org.rocksdb.MutableDBOptions.MutableDBOptionsBuilder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class MutableDBOptionsTest {
+  @RegisterExtension
+  public static final RocksNativeLibraryResource ROCKS_NATIVE_LIBRARY_RESOURCE =
+      new RocksNativeLibraryResource();
+
+  @TempDir public File dbFolder;
 
   @Test
   public void builder() {
@@ -27,12 +38,14 @@ public class MutableDBOptionsTest {
     assertThat(builder.avoidFlushDuringShutdown()).isEqualTo(false);
   }
 
-  @Test(expected = NoSuchElementException.class)
+  @Test
   public void builder_getWhenNotSet() {
-    final MutableDBOptionsBuilder builder =
-        MutableDBOptions.builder();
+    assertThrows(NoSuchElementException.class, () -> {
+        final MutableDBOptionsBuilder builder =
+            MutableDBOptions.builder();
 
-    builder.bytesPerSync();
+        builder.bytesPerSync();
+    });
   }
 
   @Test

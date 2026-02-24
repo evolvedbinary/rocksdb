@@ -8,8 +8,8 @@ package org.rocksdb;
 import org.junit.Test;
 
 import java.util.Random;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TransactionOptionsTest {
 

@@ -5,12 +5,12 @@
 
 package org.rocksdb;
 
-import org.junit.Test;
-import org.rocksdb.util.BytewiseComparator;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Random;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.rocksdb.util.BytewiseComparator;
 
 public class OptimisticTransactionOptionsTest {
 
