@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.util.TestUtil;
@@ -107,7 +106,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectWithMissing() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
 
@@ -209,7 +208,7 @@ public class MultiGetTest {
   @Test
   public void putNThenMultiGetDirectSlicedWithMissing() throws RocksDBException {
     try (final Options opt = new Options().setCreateIfMissing(true);
-         final RocksDB db = RocksDB.open(opt, dbFolder.getRoot().getAbsolutePath())) {
+         final RocksDB db = RocksDB.open(opt, dbFolder.getAbsolutePath())) {
       db.put("key1".getBytes(), "value1ForKey1".getBytes());
       db.put("key3".getBytes(), "value3ForKey3".getBytes());
 
