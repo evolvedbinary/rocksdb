@@ -4,13 +4,19 @@ if(${CMAKE_VERSION} VERSION_LESS "3.11.4")
     message("Please consider switching to CMake 3.11.4 or newer")
 endif()
 
+set(ROCKSDB_JAVA_VERSION "$ENV{ROCKSDB_JAVA_VERSION}" CACHE STRING
+    "Version string for RocksJava pom.xml and JAR artifacts (default: RocksDB project version)")
+if(NOT ROCKSDB_JAVA_VERSION)
+    set(ROCKSDB_JAVA_VERSION "${CMAKE_PROJECT_VERSION}")
+endif()
+
 # ---------------------------------------------------------------------------
 # Generate pom.xml from pom.xml.template by substituting the project version.
 # Equivalent to the ../Makefile 'rocksdbjavageneratepom' target.
 # ---------------------------------------------------------------------------
-message(STATUS "Generating java/pom.xml (version ${CMAKE_PROJECT_VERSION})")
+message(STATUS "Generating java/pom.xml (version ${ROCKSDB_JAVA_VERSION})")
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml.template _POM_TEMPLATE)
-string(REPLACE "0.0.0-SNAPSHOT" "${CMAKE_PROJECT_VERSION}" _POM_CONTENT "${_POM_TEMPLATE}")
+string(REPLACE "0.0.0-SNAPSHOT" "${ROCKSDB_JAVA_VERSION}" _POM_CONTENT "${_POM_TEMPLATE}")
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml "${_POM_CONTENT}")
 
 # ---------------------------------------------------------------------------
