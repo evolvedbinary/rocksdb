@@ -222,7 +222,7 @@ public class ReadOnlyTest {
              final RocksDB ignored = RocksDB.open(options, dbFolder.getAbsolutePath())) {
           // no-op
         }
-    Files.write(dbFolder.getRoot().toPath().resolve("999999.log"), new byte[] {1});
+        Files.write(dbFolder.getAbsoluteFile().toPath().resolve("999999.log"), new byte[] {1});
 
         try (final ColumnFamilyOptions cfOpts = new ColumnFamilyOptions()) {
           final List<ColumnFamilyDescriptor> cfDescriptors = Collections.singletonList(
