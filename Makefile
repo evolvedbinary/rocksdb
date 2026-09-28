@@ -2131,10 +2131,10 @@ SHA256_CMD = sha256sum
 
 ZLIB_VER ?= 1.3.2
 ZLIB_SHA256 ?= bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16
-ZLIB_DOWNLOAD_BASE ?= http://zlib.net
+ZLIB_DOWNLOAD_BASE ?= https://zlib.net
 BZIP2_VER ?= 1.0.8
 BZIP2_SHA256 ?= ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
-BZIP2_DOWNLOAD_BASE ?= http://sourceware.org/pub/bzip2
+BZIP2_DOWNLOAD_BASE ?= https://sourceware.org/pub/bzip2
 SNAPPY_VER ?= 1.2.2
 SNAPPY_SHA256 ?= 90f74bc1fbf78a6c56b3c4a082a05103b3a56bb17bca1a27e052ea11723292dc
 SNAPPY_DOWNLOAD_BASE ?= https://github.com/google/snappy/archive
