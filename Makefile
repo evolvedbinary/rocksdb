@@ -2448,7 +2448,7 @@ SHA256_CMD = sha256sum
 # overrides them to a mirror on the "third-party-deps" GitHub release (see
 # .github/actions/pre-steps/action.yml). When bumping a version, see
 # instructions in CI config comments for how to update that release.
-ZLIB_VER ?= 1.3.1
+ZLIB_VER ?= 1.3.2
 ZLIB_SHA256 ?= 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
 ZLIB_DOWNLOAD_PREFIX ?= http://zlib.net/zlib-
 BZIP2_VER ?= 1.0.8
