@@ -2464,7 +2464,7 @@ ZSTD_VER ?= 1.5.7
 ZSTD_SHA256 ?= 37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3
 ZSTD_DOWNLOAD_PREFIX ?= https://github.com/facebook/zstd/archive/v
 # curl with the common options used to fetch the pinned third-party sources above
-CURL_DOWNLOAD = curl --fail --location --retry 3 --retry-all-errors
+CURL_DOWNLOAD = curl --fail --location --retry 3
 
 ifeq ($(PLATFORM), OS_MACOSX)
 ifeq (,$(findstring librocksdbjni-osx,$(ROCKSDBJNILIB)))

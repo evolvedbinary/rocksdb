@@ -324,7 +324,7 @@ endif
 # (intentionally unlisted): https://github.com/facebook/rocksdb/releases/edit/third-party-deps
 DEPS_URL?=https://github.com/facebook/rocksdb/releases/download/third-party-deps
 # curl with the common options used to fetch the jars below
-CURL_DOWNLOAD = curl --fail --insecure --location --retry 3 --retry-all-errors
+CURL_DOWNLOAD = curl --fail --insecure --location --retry 3
 
 java-version:
 ifneq ($(JAVAC_VERSION_GE_MIN),true)
